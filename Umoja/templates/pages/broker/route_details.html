@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Route Details - {{ route.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        #route-map { height: 480px; width: 100%; border-radius: 6px; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'broker_dashboard' %}">Umoja</a>
+    </div>
+</nav>
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+        <div>
+            <h3>{{ route.name }}</h3>
+            <p class="mb-1 text-muted">{{ route.origin }} → {{ route.destination }}</p>
+            <small class="text-muted">Date: {{ route.date }} · Time: {{ route.time }}</small>
+        </div>
+        <div class="text-end">
+            <a href="{% url 'broker_routes' %}" class="btn btn-outline-secondary btn-sm">Back</a>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div id="route-map"></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Bookings ({{ bookings.count }})</h5>
+            <div class="list-group">
+                {% for b in bookings %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>{{ b.farmer.get_full_name|default:b.farmer.username }}</strong>
+                                <div class="small text-muted">{{ b.produce_type }} · {{ b.quantity }} kg</div>
+                            </div>
+                            <div class="text-end">
+                                <div>KES {{ b.total_price }}</div>
+                                <div class="small text-muted">{{ b.get_status_display }}</div>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="list-group-item text-muted">No bookings yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{{ route_coords|json_script:"route_coords" }}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-polylinedecorator@1.7.0/dist/leaflet.polylineDecorator.min.js"></script>
+<script>
+    (function() {
+      const coords = (function(){
+        try {
+          return JSON.parse(document.getElementById('route_coords').textContent || '[]');
+        } catch (e) {
+          console.warn('Invalid route_coords JSON:', e);
+          return [];
+        }
+      })();
+      const map = L.map('route-map', {scrollWheelZoom: true});
+      const defaultCenter = (coords && coords.length) ? coords[0] : [-1.286389, 36.817223];
+      map.setView(defaultCenter, (coords && coords.length) ? 12 : 8);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
+      }).addTo(map);
+
+      if (coords && coords.length) {
+        // draw main polyline
+        const poly = L.polyline(coords, { color: '#28a745', weight: 5, opacity: 0.9, lineJoin: 'round' }).addTo(map);
+        map.fitBounds(poly.getBounds().pad(0.1));
+
+        // add origin/destination markers
+        L.marker(coords[0]).addTo(map).bindPopup('<strong>Origin</strong>');
+        if (coords.length > 1) L.marker(coords[coords.length - 1]).addTo(map).bindPopup('<strong>Destination</strong>');
+
+        // add repeated arrow symbols along the polyline to show direction (requires leaflet.polylineDecorator)
+        try {
+          const decorator = L.polylineDecorator(poly, {
+            patterns: [{
+              offset: '10%', // start offset
+              repeat: '8%',  // spacing between arrows
+              symbol: L.Symbol.arrowHead({
+                pixelSize: 12,
+                polygon: true,
+                pathOptions: { fillOpacity: 1, color: '#28a745', weight: 0 }
+              })
+            }]
+          }).addTo(map);
+        } catch (e) {
+          console.warn('PolylineDecorator not available:', e);
+        }
+      } else {
+        L.marker(defaultCenter).addTo(map).bindPopup('No coordinates available for this route').openPopup();
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,651 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketplace - Umoja Farmer Connect</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        /* Custom styles for form validation */
+        .is-invalid {
+            border-color: #dc3545 !important;
+            padding-right: calc(1.5em + 0.75rem) !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e") !important;
+            background-repeat: no-repeat !important;
+            background-position: right calc(0.375em + 0.1875rem) center !important;
+            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem) !important;
+        }
+        .invalid-feedback {
+            display: none;
+            width: 100%;
+            margin-top: 0.25rem;
+            font-size: 0.875em;
+            color: #dc3545;
+        }
+        .is-invalid ~ .invalid-feedback {
+            display: block;
+        }
+        .stat-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 1.25rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            height: 100%;
+        }
+        .dashboard-card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            margin-bottom: 1.5rem;
+        }
+        .dashboard-card .card-body {
+            padding: 1.5rem;
+        }
+        .dashboard-sidebar {
+            background-color: #f8f9fa;
+            min-height: calc(100vh - 56px);
+            border-right: 1px solid #dee2e6;
+        }
+        .nav-link {
+            color: #495057;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.25rem;
+            margin: 0.25rem 0.5rem;
+        }
+        .nav-link:hover, .nav-link.active {
+            background-color: #e9ecef;
+            color: #0d6efd;
+        }
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+            margin-right: 8px;
+        }
+        .logout-btn {
+            color: #dc3545;
+        }
+        .logout-btn:hover {
+            background-color: #f8d7da;
+        }
+    </style>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'index' %}">
+                <i class="bi bi-flower1 text-success me-2 fs-3"></i>
+                <span class="fw-bold text-success">Umoja Farmer Connect</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'index' %}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'broker_dashboard' %}">Dashboard</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0 dashboard-sidebar">
+                <div class="d-flex flex-column">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'broker_dashboard' %}">
+                                <i class="bi bi-speedometer2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'broker_routes' %}">
+                                <i class="bi bi-map"></i>My Routes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{% url 'broker_marketplace' %}">
+                                <i class="bi bi-shop"></i>Marketplace
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'broker_bids' %}">
+                                <i class="bi bi-cart3"></i>My Bids
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'payment_history' %}">
+                                <i class="bi bi-currency-exchange"></i>Payments
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link logout-btn" href="{% url 'logout' %}">
+                                <i class="bi bi-box-arrow-right"></i>Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 px-md-4 py-4">
+                <!-- Messages -->
+                {% if messages %}
+                    <div class="mb-3">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- Header -->
+                <div class="d-flex justify-content-between flex-wrap align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1">Farmers Marketplace</h2>
+                        <p class="text-muted">Browse available produce from local farmers and place your bids</p>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1">Active Listings</h6>
+                                    <h3 class="mb-0">{{ listings_count|default:0 }}</h3>
+                                </div>
+                                <i class="bi bi-shop-window text-primary fs-1 opacity-25"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1">My Active Bids</h6>
+                                    <h3 class="mb-0">{{ active_bids_count|default:0 }}</h3>
+                                </div>
+                                <i class="bi bi-cart-check text-success fs-1 opacity-25"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1">Accepted Bids</h6>
+                                    <h3 class="mb-0">{{ accepted_bids_count|default:0 }}</h3>
+                                </div>
+                                <i class="bi bi-check-circle text-info fs-1 opacity-25"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search and Filters -->
+                <div class="dashboard-card mb-4">
+                    <div class="card-body">
+                        <form method="GET" action="{% url 'broker_marketplace' %}" id="marketplace-filters">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label for="produce_type" class="form-label small text-muted">Produce Type</label>
+                                    <select name="produce_type" id="produce_type" class="form-select">
+                                        <option value="">All Types</option>
+                                        {% for value, label in produce_types %}
+                                            <option value="{{ value }}" {% if request.GET.produce_type == value|stringformat:'s' %}selected{% endif %}>
+                                                {{ label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="location" class="form-label small text-muted">Location</label>
+                                    <input type="text" name="location" id="location" class="form-control" 
+                                           placeholder="Enter location" value="{{ request.GET.location }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="min_price" class="form-label small text-muted">Min Price (KES)</label>
+                                    <input type="number" name="min_price" id="min_price" class="form-control" 
+                                           placeholder="Min" value="{{ request.GET.min_price }}" min="0">
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="max_price" class="form-label small text-muted">Max Price (KES)</label>
+                                    <input type="number" name="max_price" id="max_price" class="form-control" 
+                                           placeholder="Max" value="{{ request.GET.max_price }}" min="0">
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-funnel me-1"></i> Apply Filters
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Listings Grid -->
+                <div class="row g-4">
+                    {% if listings %}
+                        {% for listing in listings %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    {% if listing.image %}
+                                        <img src="{{ listing.image.url }}" class="card-img-top" alt="{{ listing.get_produce_type_display }}" 
+                                             style="height: 200px; object-fit: cover; border-radius: 8px 8px 0 0;">
+                                    {% else %}
+                                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" 
+                                             style="height: 200px; border-radius: 8px 8px 0 0;">
+                                            <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h5 class="card-title mb-0">{{ listing.get_produce_type_display }}</h5>
+                                            <span class="badge bg-{{ listing.get_quality_display|lower }}">
+                                                {{ listing.get_quality_display }}
+                                            </span>
+                                        </div>
+                                        
+                                        <p class="text-muted small mb-2">
+                                            <i class="bi bi-geo-alt"></i> {{ listing.farmer.get_location_display }}
+                                        </p>
+                                        
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <div>
+                                                <span class="h5 mb-0">KES {{ listing.price_expected|floatformat:2|default:"0.00" }}</span>
+                                                <span class="text-muted small">/ {{ listing.get_unit_display }}</span>
+                                            </div>
+                                            <span class="badge bg-light text-dark">
+                                                <i class="bi bi-box-seam"></i> 
+                                                {{ listing.quantity_available }} {{ listing.get_unit_display }}{{ listing.quantity_available|pluralize }}
+                                            </span>
+                                        </div>
+                                        
+                                        <!-- Bidding Form -->
+                                        <form method="post" action="{% url 'place_bid' listing.id %}" id="bid-form-{{ listing.id }}" class="mb-3">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="listing_id" value="{{ listing.id }}">
+                                            
+                                            <div class="mb-2">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <label for="quantity-{{ listing.id }}" class="form-label small text-muted mb-0">
+                                                        Quantity ({{ listing.get_unit_display }})
+                                                    </label>
+                                                    <small class="text-muted">
+                                                        Max: {{ listing.quantity_available|floatformat:2 }}
+                                                    </small>
+                                                </div>
+                                                <input type="number" 
+                                                       class="form-control form-control-sm" 
+                                                       id="quantity-{{ listing.id }}" 
+                                                       name="quantity_requested" 
+                                                       min="0.01" 
+                                                       max="{{ listing.quantity_available|floatformat:2 }}" 
+                                                       step="0.01"
+                                                       data-max-quantity="{{ listing.quantity_available|floatformat:2 }}"
+                                                       value="{{ listing.quantity_available|floatformat:2 }}" 
+                                                       required 
+                                                       onchange="calculateTotal('{{ listing.id }}')">
+                                                <div class="invalid-feedback" id="quantity-feedback-{{ listing.id }}">
+                                                    Please enter a valid quantity (max {{ listing.quantity_available|floatformat:2 }})
+                                                </div>
+                                                <div class="form-text small text-muted">
+                                                    Available: {{ listing.quantity_available|floatformat:2 }} {{ listing.get_unit_display }}
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-2">
+                                                <label for="price-{{ listing.id }}" class="form-label small text-muted">
+                                                    Your Price (KES) - Min: {{ listing.price_expected|floatformat:2|default:"Negotiable" }}
+                                                </label>
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text">KES</span>
+                                                    <input type="number" 
+                                                           class="form-control" 
+                                                           id="price-{{ listing.id }}" 
+                                                           name="price_per_unit" 
+                                                           min="{% if listing.price_expected %}{{ listing.price_expected|floatformat:2 }}{% else %}0.01{% endif %}" 
+                                                           step="0.01" 
+                                                           value="{{ listing.price_expected|floatformat:2|default:'' }}" 
+                                                           required
+                                                           onchange="calculateTotal('{{ listing.id }}')">
+                                                </div>
+                                                <div class="invalid-feedback" id="price-feedback-{{ listing.id }}">
+                                                    Price must be at least KES {{ listing.price_expected|floatformat:2 }}
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label small text-muted">Total Amount</label>
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <h5 class="mb-0" id="total-{{ listing.id }}">
+                                                        KES {{ listing.price_expected|floatformat:2|default:"0.00" }}
+                                                    </h5>
+                                                    <button type="submit" class="btn btn-sm btn-success" id="bid-button-{{ listing.id }}">
+                                                        <i class="bi bi-gavel me-1"></i> Place Bid
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                        
+                                        <!-- Bid Status -->
+                                        {% with bid=listing.get_user_bid request=request %}
+                                            {% if bid %}
+                                            <div class="alert alert-{{ bid.get_status_class }} p-2 mb-0 mt-2">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <i class="bi {{ bid.get_status_icon }}"></i>
+                                                        <span class="ms-1">{{ bid.get_status_display }}</span>
+                                                        {% if bid.status == 'accepted' %}
+                                                            <a href="#" class="alert-link ms-2" data-bs-toggle="modal" 
+                                                               data-bs-target="#paymentModal" 
+                                                               data-bid-id="{{ bid.id }}" 
+                                                               data-amount="{{ bid.total_price|floatformat:2 }}">
+                                                                Make Payment
+                                                            </a>
+                                                        {% endif %}
+                                                    </div>
+                                                    {% if bid.status == 'pending' %}
+                                                        <form method="post" action="{% url 'cancel_bid' bid.id %}" class="d-inline">
+                                                            {% csrf_token %}
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                                    onclick="return confirm('Are you sure you want to cancel this bid?')">
+                                                                Cancel Bid
+                                                            </button>
+                                                        </form>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                    
+                                    <div class="card-footer bg-transparent border-top-0">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                <i class="bi bi-person"></i> 
+                                                {{ listing.farmer.get_full_name|default:listing.farmer.username }}
+                                            </small>
+                                            <small class="text-muted">
+                                                <i class="bi bi-calendar3"></i> {{ listing.created_at|date:"M d, Y" }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="col-12">
+                            <div class="text-center py-5">
+                                <i class="bi bi-shop text-muted" style="font-size: 4rem;"></i>
+                                <h4 class="mt-3 text-muted">No Listings Available</h4>
+                                <p class="text-muted">Check back later for new produce listings.</p>
+                                <a href="{% url 'broker_marketplace' %}" class="btn btn-outline-primary mt-2">
+                                    <i class="bi bi-arrow-repeat me-1"></i> Refresh
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if listings.has_other_pages %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if listings.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                                   aria-label="First">
+                                    <span aria-hidden="true">&laquo;&laquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ listings.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                                   aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;&laquo;</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">&laquo;</span>
+                            </li>
+                        {% endif %}
+                        
+                        {% for i in listings.paginator.page_range %}
+                            {% if listings.number == i %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ i }} <span class="visually-hidden">(current)</span></span>
+                                </li>
+                            {% elif i > listings.number|add:'-3' and i < listings.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                        {{ i }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if listings.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ listings.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                                   aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ listings.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                                   aria-label="Last">
+                                    <span aria-hidden="true">&raquo;&raquo;</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;</span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;&raquo;</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentModalLabel">Complete Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>You are about to make a payment of <strong>KES <span id="paymentAmount">0.00</span></strong> for your accepted bid.</p>
+                    <p>Please select your preferred payment method:</p>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="mpesa" value="mpesa" checked>
+                            <label class="form-check-label" for="mpesa">
+                                <i class="bi bi-phone"></i> M-Pesa
+                            </label>
+                        </div>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="card" value="card">
+                            <label class="form-check-label" for="card">
+                                <i class="bi bi-credit-card"></i> Credit/Debit Card
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="mpesaPayment" class="payment-method">
+                        <div class="alert alert-info">
+                            <small>You will receive an M-Pesa payment prompt on your phone to complete the transaction.</small>
+                        </div>
+                    </div>
+                    
+                    <div id="cardPayment" class="payment-method d-none">
+                        <div class="mb-3">
+                            <label for="cardNumber" class="form-label">Card Number</label>
+                            <input type="text" class="form-control" id="cardNumber" placeholder="1234 5678 9012 3456">
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <label for="expiryDate" class="form-label">Expiry Date</label>
+                                <input type="text" class="form-control" id="expiryDate" placeholder="MM/YY">
+                            </div>
+                            <div class="col-6">
+                                <label for="cvv" class="form-label">CVV</label>
+                                <input type="text" class="form-control" id="cvv" placeholder="123">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" id="confirmPayment">
+                        <i class="bi bi-check-circle"></i> Confirm Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Calculate total bid amount with validation
+        function calculateTotal(listingId) {
+            const quantityInput = document.getElementById(`quantity-${listingId}`);
+            const priceInput = document.getElementById(`price-${listingId}`);
+            const quantityFeedback = document.getElementById(`quantity-feedback-${listingId}`);
+            const priceFeedback = document.getElementById(`price-feedback-${listingId}`);
+            const bidButton = document.getElementById(`bid-button-${listingId}`);
+            
+            // Get the max quantity from the data attribute to preserve decimal places
+            const maxQuantity = parseFloat(quantityInput.getAttribute('data-max-quantity')) || 0;
+            let quantity = parseFloat(quantityInput.value) || 0;
+            const price = parseFloat(priceInput.value) || 0;
+            const minPrice = parseFloat(priceInput.min) || 0;
+            
+            // Reset validation states
+            quantityInput.classList.remove('is-invalid');
+            priceInput.classList.remove('is-invalid');
+            bidButton.disabled = false;
+            bidButton.title = '';
+            
+            // Validate quantity
+            if (isNaN(quantity) || quantity <= 0 || quantity > maxQuantity) {
+                quantityInput.classList.add('is-invalid');
+                // Show the exact max quantity from the data attribute
+                const displayMax = quantityInput.getAttribute('data-max-quantity');
+                quantityFeedback.textContent = `Please enter a quantity between 0.01 and ${displayMax}`;
+                bidButton.disabled = true;
+                return;
+            }
+            
+            // Validate price
+            if (isNaN(price) || price < minPrice) {
+                priceInput.classList.add('is-invalid');
+                priceFeedback.textContent = `Price must be at least KES ${minPrice.toFixed(2)}`;
+                bidButton.disabled = true;
+                return;
+            }
+            
+            // Calculate and update total
+            const total = (quantity * price).toFixed(2);
+            document.getElementById(`total-${listingId}`).textContent = `KES ${total}`;
+        }
+
+        // Initialize all bid forms on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize all bid forms
+            document.querySelectorAll('form[id^="bid-form-"]').forEach(form => {
+                const listingId = form.id.replace('bid-form-', '');
+                calculateTotal(listingId);
+                
+                // Add form submission validation
+                form.addEventListener('submit', function(e) {
+                    calculateTotal(listingId);
+                    
+                    // If button is disabled, prevent form submission
+                    const bidButton = document.getElementById(`bid-button-${listingId}`);
+                    if (bidButton.disabled) {
+                        e.preventDefault();
+                        return false;
+                    }
+                    return true;
+                });
+            });
+            
+            // Toggle payment methods
+            const paymentMethods = document.querySelectorAll('input[name="paymentMethod"]');
+            paymentMethods.forEach(method => {
+                method.addEventListener('change', function() {
+                    document.querySelectorAll('.payment-method').forEach(div => {
+                        div.classList.add('d-none');
+                    });
+                    document.getElementById(`${this.value}Payment`).classList.remove('d-none');
+                });
+            });
+            
+            // Handle payment modal show event
+            const paymentModal = document.getElementById('paymentModal');
+            if (paymentModal) {
+                paymentModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const amount = button.getAttribute('data-amount');
+                    const bidId = button.getAttribute('data-bid-id');
+                    
+                    document.getElementById('paymentAmount').textContent = amount;
+                    
+                    // Update the confirm payment button
+                    const confirmBtn = document.getElementById('confirmPayment');
+                    confirmBtn.onclick = function() {
+                        // Here you would typically process the payment
+                        // For now, we'll just show a success message
+                        alert('Payment of KES ' + amount + ' processed successfully!');
+                        
+                        // Close the modal
+                        const modal = bootstrap.Modal.getInstance(paymentModal);
+                        modal.hide();
+                    };
+                });
+            }
+            
+            // Auto-dismiss alerts after 5 seconds
+            const alertList = [].slice.call(document.querySelectorAll('.alert'));
+            alertList.forEach(function(alert) {
+                setTimeout(function() {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+        });
+    </script>
+</body>
+</html>

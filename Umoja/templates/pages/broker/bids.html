@@ -1,0 +1,867 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bids - Umoja Farmer Connect</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="[https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css](https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css)" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="[https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css](https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css)">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
+    <style>
+        .stat-card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 1.25rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            height: 100%;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        .dashboard-card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            margin-bottom: 1.5rem;
+        }
+        .dashboard-card .card-body {
+            padding: 1.5rem;
+        }
+        .dashboard-sidebar {
+            background-color: #f8f9fa;
+            min-height: calc(100vh - 56px);
+            border-right: 1px solid #dee2e6;
+        }
+        .nav-link {
+            color: #495057;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.25rem;
+            margin: 0.25rem 0.5rem;
+            transition: all 0.2s;
+        }
+        .nav-link:hover, .nav-link.active {
+            background-color: #e9ecef;
+            color: #0d6efd;
+        }
+        .nav-link i {
+            width: 20px;
+            text-align: center;
+            margin-right: 8px;
+        }
+        .logout-btn {
+            color: #dc3545;
+        }
+        .logout-btn:hover {
+            background-color: #f8d7da;
+        }
+        .table th {
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+            border-top: none;
+        }
+        .table td {
+            vertical-align: middle;
+        }
+        .badge {
+            font-weight: 500;
+            padding: 0.4em 0.8em;
+        }
+        .avatar-sm {
+                        width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background-color: #e9ecef;
+            color: #6c757d;
+        }
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 0.5rem;
+        }
+        .dropdown-item {
+            border-radius: 4px;
+            padding: 0.5rem 1rem;
+            margin: 0.1rem 0;
+        }
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+        .page-item.active .page-link {
+            background-color: #198754;
+            border-color: #198754;
+        }
+        .page-link {
+            color: #198754;
+        }
+        .page-link:hover {
+            color: #0f6848;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'index' %}">
+                <i class="bi bi-flower1 text-success me-2 fs-3"></i>
+                <span class="fw-bold text-success">Umoja Farmer Connect</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'index' %}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'broker_dashboard' %}">Dashboard</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0 dashboard-sidebar">
+                <div class="d-flex flex-column">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'broker_dashboard' %}">
+                                <i class="bi bi-speedometer2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'broker_routes' %}">
+                                <i class="bi bi-map"></i>My Routes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'broker_marketplace' %}">
+                                <i class="bi bi-shop"></i>Marketplace
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{% url 'broker_bids' %}">
+                                <i class="bi bi-cart3"></i>My Bids
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'payment_history' %}">
+                                <i class="bi bi-currency-exchange"></i>Payments
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link logout-btn" href="{% url 'logout' %}">
+                                <i class="bi bi-box-arrow-right"></i>Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 px-md-4 py-4">
+                <!-- Messages -->
+                {% if messages %}
+                    <div class="mb-3">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- Header -->
+                <div class="d-flex justify-content-between flex-wrap align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1">My Bids</h2>
+                        <p class="text-muted">Track and manage all your bids in one place</p>
+                    </div>
+                    <div>
+                        <a href="{% url 'broker_marketplace' %}" class="btn btn-success">
+                            <i class="bi bi-plus-circle me-2"></i>Place New Bid
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1">Total Bids</h6>
+                                    <h3 class="mb-0">{{ bids.paginator.count|default:0 }}</h3>
+                                </div>
+                                <i class="bi bi-cart3 text-primary fs-1 opacity-25"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1">Pending</h6>
+                                    <h3 class="mb-0">{{ pending_count|default:0 }}</h3>
+                                </div>
+                                <i class="bi bi-clock-history text-warning fs-1 opacity-25"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1">Accepted</h6>
+                                    <h3 class="mb-0">{{ accepted_count|default:0 }}</h3>
+                                </div>
+                                <i class="bi bi-check-circle text-success fs-1 opacity-25"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-muted mb-1">Total Spent</h6>
+                                    <h3 class="mb-0">KES {{ total_spent|default:0|floatformat:2 }}</h3>
+                                </div>
+                                <i class="bi bi-currency-exchange text-info fs-1 opacity-25"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter and Search -->
+                <div class="dashboard-card mb-4">
+                    <div class="card-body">
+                        <form method="GET" action="{% url 'broker_bids' %}" id="bidsFilterForm">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label for="status" class="form-label small text-muted">Status</label>
+                                    <select class="form-select" name="status" id="status">
+                                        <option value="">All Status</option>
+                                        {% for status_code, status_name in status_choices %}
+                                            <option value="{{ status_code }}" 
+                                                {% if request.GET.status == status_code %}selected{% endif %}>
+                                                {{ status_name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="produce_type" class="form-label small text-muted">Produce Type</label>
+                                    <select class="form-select" name="produce_type" id="produce_type">
+                                        <option value="">All Types</option>
+                                        {% for value, label in produce_types %}
+                                            <option value="{{ value }}" 
+                                                {% if request.GET.produce_type == value|stringformat:'s' %}selected{% endif %}>
+                                                {{ label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="date_range" class="form-label small text-muted">Date Range</label>
+                                    <select class="form-select" name="date_range" id="date_range">
+                                        <option value="">All Time</option>
+                                        <option value="today" {% if request.GET.date_range == 'today' %}selected{% endif %}>Today</option>
+                                        <option value="week" {% if request.GET.date_range == 'week' %}selected{% endif %}>This Week</option>
+                                        <option value="month" {% if request.GET.date_range == 'month' %}selected{% endif %}>This Month</option>
+                                        <option value="year" {% if request.GET.date_range == 'year' %}selected{% endif %}>This Year</option>
+                                        <option value="custom" {% if request.GET.date_range == 'custom' %}selected{% endif %}>Custom Range</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-primary w-100">
+                                        <i class="bi bi-funnel me-1"></i> Apply Filters
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Hidden fields for custom date range -->
+                            <div id="customDateRange" class="row g-3 mt-2" 
+                                {% if request.GET.date_range == 'custom' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
+                                <div class="col-md-6">
+                                    <label for="start_date" class="form-label small text-muted">Start Date</label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date" 
+                                           value="{{ request.GET.start_date }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="end_date" class="form-label small text-muted">End Date</label>
+                                    <input type="date" class="form-control" id="end_date" name="end_date" 
+                                           value="{{ request.GET.end_date }}">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Bids Table -->
+                <div class="dashboard-card">
+                    <div class="card-body">
+                        {% if bids %}
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>BID #</th>
+                                            <th>LISTING DETAILS</th>
+                                            <th>FARMER</th>
+                                            <th>QUANTITY</th>
+                                            <th>PRICE</th>
+                                            <th>TOTAL</th>
+                                            <th>STATUS</th>
+                                            <th>DATE</th>
+                                            <th>ACTIONS</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for bid in bids %}
+                                            <tr>
+                                                <td><strong>#{{ bid.id }}</strong></td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        {% if bid.listing.image %}
+                                                            <img src="{{ bid.listing.image.url }}" 
+                                                                 alt="{{ bid.listing.get_produce_type_display }}" 
+                                                                 class="rounded me-2" 
+                                                                 style="width: 40px; height: 40px; object-fit: cover;">
+                                                        {% else %}
+                                                            <div class="bg-light rounded d-flex align-items-center justify-content-center me-2" 
+                                                                 style="width: 40px; height: 40px;">
+                                                                <i class="bi bi-image text-muted"></i>
+                                                            </div>
+                                                        {% endif %}
+                                                        <div>
+                                                            <div class="fw-medium">{{ bid.listing.get_produce_type_display }}</div>
+                                                            <div class="text-muted small">
+                                                                <i class="bi bi-geo-alt"></i> 
+                                                                {{ bid.listing.farmer.get_location_display }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-sm me-2">
+                                                            <i class="bi bi-person"></i>
+                                                        </div>
+                                                        <div>
+                                                            <div class="fw-medium">
+                                                                {{ bid.listing.farmer.user.get_full_name|default:bid.listing.farmer.user.username }}
+                                                            </div>
+                                                            <div class="text-muted small">
+                                                                <i class="bi bi-telephone"></i> 
+                                                                {{ bid.listing.farmer.phone_number|default:"N/A" }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {{ bid.quantity }} {{ bid.listing.get_unit_display }}{{ bid.quantity|pluralize }}
+                                                </td>
+                                                <td>KES {{ bid.price_per_unit|floatformat:2 }}</td>
+                                                <td><strong class="text-primary">KES {{ bid.total_price|floatformat:2 }}</strong></td>
+                                                <td>
+                                                    <span class="badge bg-{{ bid.get_status_class }} py-2 w-100">
+                                                        <i class="bi {{ bid.get_status_icon }} me-1"></i>
+                                                        {{ bid.get_status_display }}
+                                                    </span>
+                                                    {% if bid.updated_at and bid.status != 'pending' %}
+                                                        <div class="text-muted small mt-1">
+                                                            {{ bid.updated_at|timesince }} ago
+                                                        </div>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <div class="small">{{ bid.created_at|date:"M d, Y" }}</div>
+                                                    <div class="text-muted small">{{ bid.created_at|time:"h:i A" }}</div>
+                                                </td>
+                                                <td>
+                                                    <div class="dropdown">
+                                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                                                type="button" data-bs-toggle="dropdown" 
+                                                                aria-expanded="false">
+                                                            <i class="bi bi-three-dots-vertical"></i>
+                                                        </button>
+                                                        <ul class="dropdown-menu dropdown-menu-end">
+                                                            <li>
+                                                                <a class="dropdown-item" href="#" 
+                                                                   data-bs-toggle="modal" 
+                                                                   data-bs-target="#bidDetailsModal" 
+                                                                   data-bid-id="{{ bid.id }}">
+                                                                    <i class="bi bi-info-circle me-2"></i>View Details
+                                                                </a>
+                                                            </li>
+                                                            {% if bid.status == 'pending' %}
+                                                                <li>
+                                                                    <form method="post" 
+                                                                          action="{% url 'cancel_bid' bid.id %}" 
+                                                                          class="d-inline">
+                                                                        {% csrf_token %}
+                                                                        <button type="submit" 
+                                                                                class="dropdown-item text-danger" 
+                                                                                onclick="return confirm('Are you sure you want to cancel this bid?')">
+                                                                            <i class="bi bi-x-circle me-2"></i>Cancel Bid
+                                                                        </button>
+                                                                    </form>
+                                                                </li>
+                                                            {% elif bid.status == 'accepted' %}
+                                                                <li>
+                                                                    <a class="dropdown-item text-success" href="#" 
+                                                                       data-bs-toggle="modal" 
+                                                                       data-bs-target="#paymentModal" 
+                                                                       data-bid-id="{{ bid.id }}" 
+                                                                       data-amount="{{ bid.total_price|floatformat:2 }}">
+                                                                        <i class="bi bi-credit-card me-2"></i>Make Payment
+                                                                    </a>
+                                                                </li>
+                                                            {% elif bid.status == 'paid' %}
+                                                                <li>
+                                                                    <a class="dropdown-item text-info" href="#" 
+                                                                       data-bs-toggle="modal" 
+                                                                       data-bs-target="#deliveryInfoModal"
+                                                                       data-bid-id="{{ bid.id }}">
+                                                                        <i class="bi bi-truck me-2"></i>Track Delivery
+                                                                    </a>
+                                                                </li>
+                                                            {% endif %}
+                                                            <li><hr class="dropdown-divider"></li>
+                                                            <li>
+                                                                <a class="dropdown-item" 
+                                                                   href="{% url 'broker_marketplace' %}?produce_type={{ bid.listing.produce_type }}">
+                                                                    <i class="bi bi-arrow-left-right me-2"></i>View Similar Listings
+                                                                </a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Pagination -->
+                            {% if bids.has_other_pages %}
+                            <nav aria-label="Bids pagination" class="mt-4">
+                                <ul class="pagination justify-content-center">
+                                    {% if bids.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" 
+                                               href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                                               aria-label="First">
+                                                <span aria-hidden="true">&laquo;&laquo;</span>
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" 
+                                               href="?page={{ bids.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                                               aria-label="Previous">
+                                                <span aria-hidden="true">&laquo;</span>
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">&laquo;&laquo;</span>
+                                        </li>
+                                        <li class="page-item disabled">
+                                            <span class="page-link">&laquo;</span>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    {% for i in bids.paginator.page_range %}
+                                        {% if bids.number == i %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ i }} <span class="visually-hidden">(current)</span></span>
+                                            </li>
+                                        {% elif i > bids.number|add:'-3' and i < bids.number|add:'3' %}
+                                            <li class="page-item">
+                                                <a class="page-link" 
+                                                   href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                                                    {{ i }}
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if bids.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" 
+                                               href="?page={{ bids.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                                               aria-label="Next">
+                                                <span aria-hidden="true">&raquo;</span>
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" 
+                                               href="?page={{ bids.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
+                                               aria-label="Last">
+                                                <span aria-hidden="true">&raquo;&raquo;</span>
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">&raquo;</span>
+                                        </li>
+                                        <li class="page-item disabled">
+                                            <span class="page-link">&raquo;&raquo;</span>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-cart-x text-muted" style="font-size: 4rem;"></i>
+                                <h4 class="mt-3 text-muted">No Bids Found</h4>
+                                <p class="text-muted">You haven't placed any bids yet.</p>
+                                <a href="{% url 'broker_marketplace' %}" class="btn btn-primary mt-2">
+                                    <i class="bi bi-shop me-2"></i>Browse Marketplace
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bid Details Modal -->
+    <div class="modal fade" id="bidDetailsModal" tabindex="-1" aria-labelledby="bidDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bidDetailsModalLabel">Bid Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="bidDetailsContent">
+                    <!-- Content will be loaded via JavaScript -->
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading bid details...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="printBidBtn">
+                        <i class="bi bi-printer me-1"></i> Print
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentModalLabel">Complete Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>You are about to make a payment of <strong>KES <span id="paymentAmount">0.00</span></strong> for your accepted bid.</p>
+                    <p>Please select your preferred payment method:</p>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="mpesa" value="mpesa" checked>
+                            <label class="form-check-label" for="mpesa">
+                                <i class="bi bi-phone"></i> M-Pesa
+                            </label>
+                        </div>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="radio" name="paymentMethod" id="card" value="card">
+                            <label class="form-check-label" for="card">
+                                <i class="bi bi-credit-card"></i> Credit/Debit Card
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="mpesaPayment" class="payment-method">
+                        <div class="alert alert-info">
+                            <small>You will receive an M-Pesa payment prompt on your phone to complete the transaction.</small>
+                        </div>
+                    </div>
+                    
+                    <div id="cardPayment" class="payment-method d-none">
+                        <div class="mb-3">
+                            <label for="cardNumber" class="form-label">Card Number</label>
+                            <input type="text" class="form-control" id="cardNumber" placeholder="1234 5678 9012 3456">
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <label for="expiryDate" class="form-label">Expiry Date</label>
+                                <input type="text" class="form-control" id="expiryDate" placeholder="MM/YY">
+                            </div>
+                            <div class="col-6">
+                                <label for="cvv" class="form-label">CVV</label>
+                                <input type="text" class="form-control" id="cvv" placeholder="123">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" id="confirmPayment">
+                        <i class="bi bi-check-circle me-1"></i> Confirm Payment
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delivery Info Modal -->
+    <div class="modal fade" id="deliveryInfoModal" tabindex="-1" aria-labelledby="deliveryInfoModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deliveryInfoModalLabel">Delivery Information</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="deliveryInfoContent">
+                    <!-- Content will be loaded via JavaScript -->
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading delivery information...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="contactDriverBtn">
+                        <i class="bi bi-telephone me-1"></i> Contact Driver
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle custom date range
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateRangeSelect = document.getElementById('date_range');
+            const customDateRange = document.getElementById('customDateRange');
+            
+            if (dateRangeSelect && customDateRange) {
+                dateRangeSelect.addEventListener('change', function() {
+                    if (this.value === 'custom') {
+                        customDateRange.style.display = 'flex';
+                    } else {
+                        customDateRange.style.display = 'none';
+                    }
+                });
+            }
+
+            // Toggle payment methods
+            const paymentMethods = document.querySelectorAll('input[name="paymentMethod"]');
+            paymentMethods.forEach(method => {
+                method.addEventListener('change', function() {
+                    document.querySelectorAll('.payment-method').forEach(div => {
+                        div.classList.add('d-none');
+                    });
+                    document.getElementById(`${this.value}Payment`).classList.remove('d-none');
+                });
+            });
+
+            // Handle payment modal
+            const paymentModal = document.getElementById('paymentModal');
+            if (paymentModal) {
+                paymentModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const amount = button.getAttribute('data-amount');
+                    const bidId = button.getAttribute('data-bid-id');
+                    
+                    document.getElementById('paymentAmount').textContent = amount;
+                    
+                    // Update the confirm payment button
+                    const confirmBtn = document.getElementById('confirmPayment');
+                    confirmBtn.onclick = function() {
+                        // Here you would typically process the payment
+                        // For now, we'll just show a success message
+                        alert('Payment of KES ' + amount + ' processed successfully for bid #' + bidId);
+                        
+                        // Close the modal
+                        const modal = bootstrap.Modal.getInstance(paymentModal);
+                        modal.hide();
+                    };
+                });
+            }
+
+            // Handle bid details modal
+            const bidDetailsModal = document.getElementById('bidDetailsModal');
+            if (bidDetailsModal) {
+                bidDetailsModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const bidId = button.getAttribute('data-bid-id');
+                    const contentDiv = document.getElementById('bidDetailsContent');
+                    
+                    // Simulate loading bid details (in a real app, this would be an AJAX call)
+                    setTimeout(() => {
+                        contentDiv.innerHTML = `
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-muted">Bid Information</h6>
+                                    <p><strong>Bid ID:</strong> #${bidId}</p>
+                                    <p><strong>Status:</strong> <span class="badge bg-success">Accepted</span></p>
+                                    <p><strong>Date Placed:</strong> ${new Date().toLocaleDateString()}</p>
+                                    <p><strong>Last Updated:</strong> ${new Date().toLocaleString()}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-muted">Order Summary</h6>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Quantity:</span>
+                                        <span>2.5 kg</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Price per kg:</span>
+                                        <span>KES 250.00</span>
+                                    </div>
+                                    <hr>
+                                    <div class="d-flex justify-content-between fw-bold">
+                                        <span>Total Amount:</span>
+                                        <span>KES 625.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <h6 class="text-muted">Farmer Information</h6>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center me-3">
+                                        <i class="bi bi-person"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0">John Doe</h6>
+                                        <p class="text-muted mb-0">
+                                            <i class="bi bi-geo-alt"></i> Nairobi, Kenya<br>
+                                            <i class="bi bi-telephone"></i> +254 712 345 678
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }, 1000);
+                });
+            }
+
+            // Handle delivery info modal
+            const deliveryInfoModal = document.getElementById('deliveryInfoModal');
+            if (deliveryInfoModal) {
+                deliveryInfoModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const bidId = button.getAttribute('data-bid-id');
+                    const contentDiv = document.getElementById('deliveryInfoContent');
+                    
+                    // Simulate loading delivery info (in a real app, this would be an AJAX call)
+                    setTimeout(() => {
+                        contentDiv.innerHTML = `
+                            <div class="text-center mb-4">
+                                <div class="position-relative" style="height: 100px;">
+                                    <div class="progress" style="height: 5px; position: absolute; top: 50%; left: 50px; right: 50px; transform: translateY(-50%);">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: 66%;" 
+                                             aria-valuenow="66" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between position-relative" style="z-index: 1;">
+                                        <div class="text-center">
+                                            <div class="rounded-circle bg-success text-white d-inline-flex align-items-center justify-content-center" 
+                                                 style="width: 40px; height: 40px; margin-bottom: 5px;">
+                                                <i class="bi bi-check-lg"></i>
+                                            </div>
+                                            <div class="small">Order<br>Confirmed</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="rounded-circle bg-success text-white d-inline-flex align-items-center justify-content-center" 
+                                                 style="width: 40px; height: 40px; margin-bottom: 5px;">
+                                                <i class="bi bi-check-lg"></i>
+                                            </div>
+                                            <div class="small">In<br>Transit</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="rounded-circle bg-light border d-inline-flex align-items-center justify-content-center" 
+                                                 style="width: 40px; height: 40px; margin-bottom: 5px;">
+                                                <i class="bi bi-truck"></i>
+                                            </div>
+                                            <div class="small">Out for<br>Delivery</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">Delivery Details</h6>
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-truck me-2"></i>
+                                        <div>
+                                            <p>Delivery information will be updated here.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            `;
+                        }, 1000);
+                    });
+                }
+
+                // Auto-dismiss alerts after 5 seconds
+                const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+        });
+
+        function markCompleted(bidId) {
+            if (confirm('Mark this bid as completed?')) {
+                fetch(`/api/bids/${bidId}/complete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (data.error || 'Failed to update'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred');
+                });
+            }
+        }
+    </script>
+</body>
+</html>

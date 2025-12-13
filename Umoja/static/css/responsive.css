@@ -1,0 +1,233 @@
+
+
+
+/* ===================================
+   Responsive Design
+   =================================== */
+
+/* Extra Large Devices (1200px and up) */
+@media (min-width: 1200px) {
+    .container {
+        max-width: 1140px;
+    }
+}
+
+/* Large Devices (992px to 1199px) */
+@media (max-width: 1199px) {
+    .hero-section h1 {
+        font-size: 2.5rem;
+    }
+    
+    .dashboard-sidebar {
+        min-height: auto;
+    }
+}
+
+/* Medium Devices (768px to 991px) */
+@media (max-width: 991px) {
+    .navbar-nav {
+        padding: 1rem 0;
+    }
+    
+    .navbar-nav .nav-link {
+        margin: 0.5rem 0;
+    }
+    
+    .navbar-nav .btn {
+        margin: 0.5rem 0;
+        width: 100%;
+    }
+    
+    .hero-section {
+        padding: 2rem 0;
+    }
+    
+    .hero-section h1 {
+        font-size: 2rem;
+    }
+    
+    .hero-section p {
+        font-size: 1rem;
+    }
+    
+    .dashboard-sidebar {
+        border-right: none;
+        border-bottom: 1px solid #dee2e6;
+        padding: 1rem 0;
+    }
+    
+    .map-container {
+        height: 300px;
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* Small Devices (576px to 767px) */
+@media (max-width: 767px) {
+    .hero-section h1 {
+        font-size: 1.75rem;
+    }
+    
+    .display-3 {
+        font-size: 2rem;
+    }
+    
+    .display-4 {
+        font-size: 1.5rem;
+    }
+    
+    .display-5 {
+        font-size: 1.25rem;
+    }
+    
+    .step-number {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+    }
+    
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+    
+    .broker-card {
+        padding: 1rem;
+    }
+    
+    .broker-avatar {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+    }
+    
+    .filter-section {
+        padding: 1rem;
+    }
+    
+    .timeline {
+        padding-left: 1.5rem;
+    }
+    
+    .timeline-marker {
+        left: -1.6rem;
+        width: 0.75rem;
+        height: 0.75rem;
+    }
+    
+    footer .col-md-6 {
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* Extra Small Devices (less than 576px) */
+@media (max-width: 575px) {
+    .navbar-brand {
+        font-size: 1.25rem;
+    }
+    
+    .hero-section {
+        min-height: 80vh;
+    }
+    
+    .hero-section h1 {
+        font-size: 1.5rem;
+    }
+    
+    .hero-section .lead {
+        font-size: 0.9rem;
+    }
+    
+    .hero-section .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+    
+    .feature-icon {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .feature-icon i {
+        font-size: 1.5rem !important;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .stat-icon {
+        font-size: 2rem;
+    }
+    
+    .map-container {
+        height: 250px;
+    }
+    
+    .dashboard-card {
+        margin-bottom: 1rem;
+    }
+    
+    .price-display {
+        font-size: 1.25rem;
+    }
+    
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+}
+
+/* Landscape Orientation for Mobile Devices */
+@media (max-width: 991px) and (orientation: landscape) {
+    .hero-section {
+        min-height: 100vh;
+        padding: 4rem 0;
+    }
+    
+    .navbar {
+        padding: 0.5rem 0;
+    }
+}
+
+/* Touch Device Optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .btn {
+        min-height: 44px;
+        padding: 0.75rem 1.5rem;
+    }
+    
+    .nav-link {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .form-control,
+    .form-select {
+        min-height: 44px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .navbar,
+    .dashboard-sidebar,
+    footer,
+    .btn,
+    .filter-section {
+        display: none !important;
+    }
+    
+    .dashboard-card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        page-break-inside: avoid;
+    }
+    
+    .map-container {
+        display: none;
+    }
+}

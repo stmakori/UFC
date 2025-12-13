@@ -1,0 +1,17 @@
+/Umoja-Farmer-Connect
+│
+├── /css
+│   └── styles.css
+│
+├── /js
+│   └── scripts.js
+│
+├── /images
+│   └── (image files)
+│
+├── index.html
+├── about.html
+├── farmers.html
+├── brokers.html
+├── contact.html
+└── login.html

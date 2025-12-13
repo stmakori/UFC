@@ -1,0 +1,366 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Products - Umoja Farmer Connect</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'index' %}">
+                <i class="bi bi-flower1 text-success me-2 fs-3"></i>
+                <span class="fw-bold text-success">Umoja Farmer Connect</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'index' %}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'farmer_dashboard' %}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">About</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0 dashboard-sidebar">
+                <div class="d-flex flex-column">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'farmer_dashboard' %}">
+                                <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{% url 'farmer_products' %}">
+                                <i class="bi bi-box-seam me-2"></i>My Products
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'farmer_bids' %}">
+                                <i class="bi bi-inbox me-2"></i>Incoming Bids
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'farmer_profile' %}">
+                                <i class="bi bi-person me-2"></i>Profile
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <i class="bi bi-bell me-2"></i>Notifications
+                                <span class="badge bg-danger ms-2">3</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link logout-btn" href="{% url 'logout' %}">
+                                <i class="bi bi-box-arrow-right me-2"></i>Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 px-md-4 py-4">
+                <!-- Messages -->
+                {% if messages %}
+                    <div class="mb-3">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="mb-0">My Products</h2>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                        <i class="bi bi-plus-circle me-2"></i>Add Product
+                    </button>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted mb-1">Total Products</p>
+                                    <h3 class="mb-0">{{ total_products }}</h3>
+                                </div>
+                                <div class="stat-icon text-primary">
+                                    <i class="bi bi-box-seam"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted mb-1">Active</p>
+                                    <h3 class="mb-0">{{ active_products }}</h3>
+                                </div>
+                                <div class="stat-icon text-success">
+                                    <i class="bi bi-check-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted mb-1">Pending Orders</p>
+                                    <h3 class="mb-0">{{ pending_orders }}</h3>
+                                </div>
+                                <div class="stat-icon text-warning">
+                                    <i class="bi bi-clock-history"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted mb-1">Total Revenue</p>
+                                    <h3 class="mb-0">KES {{ total_revenue|floatformat:0 }}</h3>
+                                </div>
+                                <div class="stat-icon text-info">
+                                    <i class="bi bi-currency-exchange"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter and Search -->
+                <div class="card dashboard-card mb-4">
+                    <div class="card-body">
+                        <form method="GET" action="{% url 'farmer_products' %}">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <input type="text" class="form-control" name="search" placeholder="Search products..." value="{{ request.GET.search }}">
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" name="status">
+                                        <option value="">All Status</option>
+                                        <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                                        <option value="sold" {% if request.GET.status == 'sold' %}selected{% endif %}>Sold</option>
+                                        <option value="expired" {% if request.GET.status == 'expired' %}selected{% endif %}>Expired</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" name="type">
+                                        <option value="">All Types</option>
+                                        <option value="maize" {% if request.GET.type == 'maize' %}selected{% endif %}>Maize</option>
+                                        <option value="beans" {% if request.GET.type == 'beans' %}selected{% endif %}>Beans</option>
+                                        <option value="tomatoes" {% if request.GET.type == 'tomatoes' %}selected{% endif %}>Tomatoes</option>
+                                        <option value="potatoes" {% if request.GET.type == 'potatoes' %}selected{% endif %}>Potatoes</option>
+                                        <option value="cabbage" {% if request.GET.type == 'cabbage' %}selected{% endif %}>Cabbage</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-outline-success w-100">
+                                        <i class="bi bi-funnel me-1"></i>Filter
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Products Grid -->
+                <div class="row g-4" id="productsGrid">
+                    {% if products %}
+                        {% for product in products %}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="card dashboard-card h-100">
+                                    {% if product.image %}
+                                        <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.get_produce_type_display }}" style="height: 200px; object-fit: cover;">
+                                    {% else %}
+                                        <img src="https://images.unsplash.com/photo-1603504026698-4b86d93eb2b1?w=400" class="card-img-top" alt="{{ product.get_produce_type_display }}" style="height: 200px; object-fit: cover;">
+                                    {% endif %}
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h5 class="card-title mb-0">{{ product.get_produce_type_display }}</h5>
+                                            <span class="badge bg-{% if product.status == 'active' %}success{% elif product.status == 'sold' %}secondary{% else %}warning{% endif %}">
+                                                {{ product.get_status_display }}
+                                            </span>
+                                        </div>
+                                        <p class="text-muted small">{{ product.description|truncatewords:15 }}</p>
+                                        <div class="mb-2">
+                                            <div class="d-flex justify-content-between text-muted small mb-1">
+                                                <span>Quantity:</span>
+                                                <strong>{{ product.quantity }} kg</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between text-muted small mb-1">
+                                                <span>Price:</span>
+                                                <strong class="text-success">KES {{ product.price|floatformat:2 }}/kg</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between text-muted small mb-1">
+                                                <span>Total Value:</span>
+                                                <strong class="text-primary">KES {{ product.total_value|floatformat:2 }}</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between text-muted small">
+                                                <span>Available:</span>
+                                                <strong>{{ product.available_from|date:"M d, Y" }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer bg-transparent border-top-0">
+                                        <div class="btn-group w-100" role="group">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="editProduct('{{ product.id }}')">
+                                                <i class="bi bi-pencil"></i> Edit
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-success" onclick="viewProduct('{{ product.id }}')">
+                                                <i class="bi bi-eye"></i> View
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct('{{ product.id }}')">
+                                                <i class="bi bi-trash"></i> Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="col-12">
+                            <div class="text-center py-5">
+                                <i class="bi bi-box-seam text-muted" style="font-size: 4rem;"></i>
+                                <h4 class="mt-3 text-muted">No Products Yet</h4>
+                                <p class="text-muted">Start by adding your first product</p>
+                                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                                    <i class="bi bi-plus-circle me-2"></i>Add Product
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Product Modal -->
+    <div class="modal fade" id="addProductModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Product</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{% url 'farmer_products' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Product Image (Optional)</label>
+                            <input type="file" class="form-control" name="image" accept="image/*">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Produce Type <span class="text-danger">*</span></label>
+                            <select class="form-select" name="produce_type" required>
+                                <option value="">Select produce</option>
+                                <option value="maize">Maize</option>
+                                <option value="beans">Beans</option>
+                                <option value="tomatoes">Tomatoes</option>
+                                <option value="potatoes">Potatoes</option>
+                                <option value="cabbage">Cabbage</option>
+                                <option value="onions">Onions</option>
+                                <option value="carrots">Carrots</option>
+                                <option value="wheat">Wheat</option>
+                                <option value="rice">Rice</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Quantity (kg) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="quantity" required min="1" step="0.01">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Price (KES/kg) <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" name="price_expected" required min="1" step="0.01">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Available From <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="available_from" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" name="description" rows="3" placeholder="Add details about your produce quality, organic status, etc..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-plus-circle me-1"></i>Add Product
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{% static 'js/main.js' %}"></script>
+    
+    <script>
+        // Edit product
+        function editProduct(id) {
+            alert('Edit product feature coming soon! Product ID: ' + id);
+        }
+
+        // View product
+        function viewProduct(id) {
+            alert('View product details coming soon! Product ID: ' + id);
+        }
+
+        // Delete product
+        function deleteProduct(id) {
+            if (confirm('Are you sure you want to delete this product?')) {
+                // TODO: Implement delete functionality
+                alert('Delete functionality coming soon! Product ID: ' + id);
+            }
+        }
+
+        // Auto-dismiss alerts
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+        });
+    </script>
+</body>
+</html>

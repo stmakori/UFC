@@ -1,0 +1,481 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Broker Dashboard - Umoja Farmer Connect</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'index' %}">
+                <i class="bi bi-flower1 text-success me-2 fs-3"></i>
+                <span class="fw-bold text-success">Umoja Farmer Connect</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'index' %}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'broker_dashboard' %}">Dashboard</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 px-0 dashboard-sidebar">
+                <div class="d-flex flex-column">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{% url 'broker_dashboard' %}">
+                                <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'broker_routes' %}">
+                                <i class="bi bi-map me-2"></i>My Routes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'broker_marketplace' %}">
+                                <i class="bi bi-shop me-2"></i>Marketplace
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'broker_bids' %}">
+                                <i class="bi bi-cart3 me-2"></i>My Bids
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'payment_history' %}">
+                                <i class="bi bi-currency-exchange me-2"></i>Payments
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link logout-btn" href="{% url 'logout' %}">
+                                <i class="bi bi-box-arrow-right me-2"></i>Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 px-md-4 py-4">
+                <!-- Messages -->
+                {% if messages %}
+                    <div class="mb-3">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- Welcome Section -->
+                <div class="d-flex justify-content-between flex-wrap align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1">Welcome back, {{ user.get_full_name|default:user.username }}!</h2>
+                        <p class="text-muted">Manage your routes and connect with farmers</p>
+                    </div>
+                    <div>
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createRouteModal">
+                            <i class="bi bi-plus-circle me-2"></i>Create New Route
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6 col-lg-3">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted mb-1">Active Bids</p>
+                                    <h3 class="mb-0">{{ active_bids }}</h3>
+                                </div>
+                                <div class="stat-icon text-success">
+                                    <i class="bi bi-cart-check"></i>
+                                </div>
+                            </div>
+                            <a href="{% url 'broker_bids' %}" class="btn btn-sm btn-link text-success p-0 mt-2">
+                                View bids <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted mb-1">Active Routes</p>
+                                    <h3 class="mb-0">{{ active_routes }}</h3>
+                                </div>
+                                <div class="stat-icon text-primary">
+                                    <i class="bi bi-map"></i>
+                                </div>
+                            </div>
+                            <a href="{% url 'broker_routes' %}" class="btn btn-sm btn-link text-primary p-0 mt-2">
+                                View routes <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted mb-1">Pending Payments</p>
+                                    <h3 class="mb-0">{{ pending_payments }}</h3>
+                                </div>
+                                <div class="stat-icon text-warning">
+                                    <i class="bi bi-currency-exchange"></i>
+                                </div>
+                            </div>
+                            <a href="{% url 'payment_history' %}" class="btn btn-sm btn-link text-warning p-0 mt-2">
+                                View payments <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-3">
+                        <div class="stat-card">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <p class="text-muted mb-1">Current Pickups</p>
+                                    <h3 class="mb-0">{{ current_pickups }}</h3>
+                                </div>
+                                <div class="stat-icon text-info">
+                                    <i class="bi bi-truck"></i>
+                                </div>
+                            </div>
+                            <a href="{% url 'broker_bids' %}?status=accepted" class="btn btn-sm btn-link text-info p-0 mt-2">
+                                View pickups <i class="bi bi-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Route Map and Schedule -->
+                <div class="row g-4 mb-4">
+                    <div class="col-lg-8">
+                        <div class="dashboard-card">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">
+                                    <i class="bi bi-map-fill text-success me-2"></i>Today's Routes
+                                </h5>
+                                <div class="map-container" id="map" style="height: 400px;"></div>
+                                
+                                <!-- Route Controls -->
+                                <div class="mt-3 d-flex gap-2 flex-wrap">
+                                    <a href="{% url 'broker_routes' %}" class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-eye me-1"></i>View All Routes
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-info" onclick="exportRoute()">
+                                        <i class="bi bi-download me-1"></i>Export
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="dashboard-card">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">
+                                    <i class="bi bi-clock-history text-success me-2"></i>Today's Schedule
+                                </h5>
+                                
+                                <div class="timeline">
+                                    {% for route in today_routes %}
+                                        <div class="timeline-item">
+                                            <div class="timeline-marker bg-success"></div>
+                                            <div class="mb-3">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div>
+                                                        <h6 class="mb-1">{{ route.name }}</h6>
+                                                        <small class="text-muted">
+                                                            <i class="bi bi-clock me-1"></i>{{ route.time|time:"g:i A" }}
+                                                            <i class="bi bi-geo-alt ms-2 me-1"></i>{{ route.origin }} → {{ route.destination }}
+                                                        </small>
+                                                    </div>
+                                                    <span class="badge bg-{{ route.status|lower }}">{{ route.status }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% empty %}
+                                        <p class="text-muted text-center">No routes scheduled for today</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Routes Table -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="dashboard-card">
+                            <div class="card-body">
+                                <h5 class="card-title mb-3">
+                                    <i class="bi bi-list-check text-success me-2"></i>Recent Routes
+                                </h5>
+                                <div class="table-responsive">
+                                    <table class="table table-hover table-custom">
+                                        <thead>
+                                            <tr>
+                                                <th>Route Name</th>
+                                                <th>Origin → Destination</th>
+                                                <th>Date & Time</th>
+                                                <th>Capacity</th>
+                                                <th>Price/kg</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for route in today_routes %}
+                                                <tr>
+                                                    <td><strong>{{ route.name }}</strong></td>
+                                                    <td>{{ route.origin }} → {{ route.destination }}</td>
+                                                    <td>{{ route.date|date:"M d, Y" }} {{ route.time|time:"g:i A" }}</td>
+                                                    <td>
+                                                        <div class="mb-1">{{ route.available_capacity }}/{{ route.capacity }} kg</div>
+                                                        <div class="progress" style="height: 5px;">
+                                                            <div class="progress-bar bg-success" 
+                                                                 role="progressbar"
+                                                                 style="width: {{ route.capacity_percentage }}%;"
+                                                                 aria-valuenow="{{ route.capacity_percentage }}"
+                                                                 aria-valuemin="0" 
+                                                                 aria-valuemax="100">
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>KES {{ route.price_per_kg }}</td>
+                                                    <td>
+                                                        <span class="badge bg-{% if route.status == 'active' %}success{% elif route.status == 'completed' %}secondary{% else %}danger{% endif %}">
+                                                            {{ route.get_status_display }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <a href="{% url 'route_details' route.id %}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-eye"></i> View
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            {% empty %}
+                                                <tr>
+                                                    <td colspan="6" class="text-center text-muted py-4">
+                                                        No routes scheduled for today
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <a href="{% url 'broker_routes' %}" class="btn btn-outline-success">View All Routes</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Bids -->
+                {% if recent_bids %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="dashboard-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="card-title mb-0">
+                                        <i class="bi bi-cart-check text-success me-2"></i>Recent Bids
+                                    </h5>
+                                    <a href="{% url 'broker_bids' %}" class="btn btn-sm btn-outline-success">View All Bids</a>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Listing</th>
+                                                <th>Farmer</th>
+                                                <th>Quantity</th>
+                                                <th>Price/Unit</th>
+                                                <th>Total</th>
+                                                <th>Status</th>
+                                                <th>Date</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for bid in recent_bids %}
+                                                <tr>
+                                                    <td>{{ bid.listing.get_produce_type_display }}</td>
+                                                    <td>{{ bid.listing.farmer.get_full_name|default:bid.listing.farmer.username }}</td>
+                                                    <td>{{ bid.quantity_requested }} {{ bid.listing.get_unit_display }}</td>
+                                                    <td>KES {{ bid.price_per_unit|floatformat:2 }}</td>
+                                                    <td><strong>KES {{ bid.total_price|floatformat:2 }}</strong></td>
+                                                    <td>
+                                                        <span class="badge bg-{% if bid.status == 'accepted' %}success{% elif bid.status == 'pending' %}warning{% elif bid.status == 'rejected' %}danger{% elif bid.status == 'completed' %}primary{% else %}secondary{% endif %}">
+                                                            {{ bid.get_status_display }}
+                                                        </span>
+                                                    </td>
+                                                    <td>{{ bid.created_at|date:"M d, Y" }}</td>
+                                                    <td>
+                                                        <a href="{% url 'listing_detail' bid.listing.id %}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                        {% if bid.status == 'accepted' and not bid.payments.exists %}
+                                                            <a href="{% url 'create_payment' bid.id %}" class="btn btn-sm btn-success ms-1">
+                                                                <i class="bi bi-cash"></i> Pay
+                                                            </a>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Route Modal -->
+    <div class="modal fade" id="createRouteModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create New Route</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{% url 'create_route' %}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Route Name</label>
+                            <input type="text" class="form-control" name="name" placeholder="e.g., Nairobi - Kiambu Route" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" name="description" rows="2" placeholder="Brief description of the route"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Origin</label>
+                                <input type="text" class="form-control" name="origin" placeholder="Starting location" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Destination</label>
+                                <input type="text" class="form-control" name="destination" placeholder="Final destination" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Collection Date</label>
+                                <input type="date" class="form-control" name="date" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Start Time</label>
+                                <input type="time" class="form-control" name="time" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Capacity (kg)</label>
+                                <input type="number" class="form-control" name="capacity" placeholder="500" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Price (KES/kg)</label>
+                                <input type="number" step="0.01" class="form-control" name="price_per_kg" placeholder="40.00" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success">Create Route</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Custom JS -->
+    <script src="{% static 'js/main.js' %}"></script>
+    
+    <script id="routes-data" type="application/json">
+    [
+    {% for route in today_routes %}
+        {
+            "origin": "{{ route.origin|default:'-1.286389,36.817223'|escapejs }}",
+            "name": "{{ route.name|escapejs }}"
+        }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+    ]
+    </script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize map with a sensible default center and tiles
+            const defaultCenter = [-1.286389, 36.817223];
+            const map = L.map('map').setView(defaultCenter, 8);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Auto-dismiss alerts after 5s
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+
+            // Parse routes from the JSON script tag and add markers
+            const routesData = JSON.parse(document.getElementById('routes-data').textContent || '[]');
+            routesData.forEach(function(r) {
+                if (!r.origin) return;
+                const parts = r.origin.split(',').map(function(s){ return parseFloat(s.trim()); });
+                if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                    L.marker(parts).addTo(map)
+                        .bindPopup('<b>' + (r.name || '') + '</b><br>' + r.origin);
+                }
+            });
+        });
+
+        // Export route function
+        function exportRoute() {
+            alert('Export functionality coming soon!');
+        }
+    </script>
+</body>
+</html>

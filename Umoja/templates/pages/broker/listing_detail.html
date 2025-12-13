@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ listing.get_produce_type_display }} - Umoja Farmer Connect{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Product Details -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'broker_marketplace' %}">Marketplace</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">{{ listing.get_produce_type_display }}</li>
+                        </ol>
+                    </nav>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            {% if listing.image %}
+                                <img src="{{ listing.image.url }}" class="img-fluid rounded" alt="{{ listing.get_produce_type_display }}">
+                            {% else %}
+                                <div class="bg-light d-flex align-items-center justify-content-center" style="height: 300px;">
+                                    <i class="bi bi-image text-muted" style="font-size: 4rem;"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h2 class="mb-3">{{ listing.get_produce_type_display }}</h2>
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="badge bg-success me-2">{{ listing.get_quality_display }}</span>
+                                <span class="text-muted">Available from {{ listing.available_from|date:"M d, Y" }}</span>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h4 class="text-success mb-3">
+                                    {% if listing.price_expected %}
+                                        KES {{ listing.price_expected|floatformat:2 }} per {{ listing.get_unit_display }}
+                                    {% else %}
+                                        Price: Negotiable
+                                    {% endif %}
+                                </h4>
+                                
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-box-seam me-2"></i>
+                                    <span>Available: <strong>{{ listing.available_quantity }} {{ listing.get_unit_display }}</strong></span>
+                                </div>
+                                <div class="d-flex align-items-center mb-3">
+                                    <i class="bi bi-geo-alt me-2"></i>
+                                    <span>Location: {{ listing.origin_text }}</span>
+                                </div>
+                                
+                                {% if listing.notes %}
+                                    <div class="alert alert-light">
+                                        <h6>Notes from Farmer:</h6>
+                                        <p class="mb-0">{{ listing.notes }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Farmer Information -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Farmer Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            <i class="bi bi-person-circle fs-1 text-muted"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">{{ listing.farmer.get_full_name|default:listing.farmer.username }}</h5>
+                            {% if listing.farmer.profile.is_verified %}
+                                <span class="badge bg-success mb-2">Verified Farmer</span>
+                            {% endif %}
+                            <p class="mb-1">
+                                <i class="bi bi-geo-alt me-1"></i> {{ listing.farmer.profile.location|default:listing.origin_text }}
+                            </p>
+                            {% if listing.farmer.profile.phone %}
+                                <p class="mb-0">
+                                    <i class="bi bi-telephone me-1"></i> {{ listing.farmer.profile.phone }}
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bidding Section -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Place a Bid</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'place_bid' listing.id %}">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label">Quantity ({{ listing.get_unit_display }})</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" 
+                                   min="1" max="{{ listing.available_quantity }}" 
+                                   step="0.01" required>
+                            <div class="form-text">
+                                Maximum available: {{ listing.available_quantity }} {{ listing.get_unit_display }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="price_per_unit" class="form-label">Your Price per {{ listing.get_unit_display }} (KES)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">KES</span>
+                                <input type="number" class="form-control" id="price_per_unit" 
+                                       name="price_per_unit" step="0.01" min="0.01" required>
+                            </div>
+                            {% if listing.price_expected %}
+                                <div class="form-text">
+                                    Farmer's expected price: KES {{ listing.price_expected|floatformat:2 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="route" class="form-label">Select Collection Route (Optional)</label>
+                            <select class="form-select" id="route" name="route">
+                                <option value="">-- Select Route --</option>
+                                {% for route in broker_routes %}
+                                    <option value="{{ route.id }}">
+                                        {{ route.name }} ({{ route.date }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                <a href="{% url 'create_route' %}" class="text-decoration-none">
+                                    <i class="bi bi-plus-circle"></i> Create New Route
+                                </a>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes to Farmer (Optional)</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-gem me-1"></i> Submit Bid
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Bidding Guidelines -->
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">Bidding Guidelines</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Bids are binding offers to purchase at the specified price
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            The farmer may accept or reject your bid
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            You can cancel pending bids before they're accepted
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success me-2"></i>
+                            Payment will be required upon bid acceptance
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
