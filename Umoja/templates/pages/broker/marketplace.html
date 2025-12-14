@@ -1,4 +1,5 @@
 {% load static %}
+{% load url_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -246,7 +247,8 @@
                     {% if listings %}
                         {% for listing in listings %}
                             <div class="col-md-6 col-lg-4">
-                                <div class="card h-100 border-0 shadow-sm">
+                                <a href="{% url 'listing_detail' listing.id %}" class="text-decoration-none text-dark">
+                                <div class="card h-100 border-0 shadow-sm" style="cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
                                     {% if listing.image %}
                                         <img src="{{ listing.image.url }}" class="card-img-top" alt="{{ listing.get_produce_type_display }}" 
                                              style="height: 200px; object-fit: cover; border-radius: 8px 8px 0 0;">
@@ -266,114 +268,56 @@
                                         </div>
                                         
                                         <p class="text-muted small mb-2">
-                                            <i class="bi bi-geo-alt"></i> {{ listing.farmer.get_location_display }}
+                                            <i class="bi bi-geo-alt"></i> {{ listing.origin_text|truncatewords:3|default:listing.farmer.profile.location }}
                                         </p>
                                         
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <div>
-                                                <span class="h5 mb-0">KES {{ listing.price_expected|floatformat:2|default:"0.00" }}</span>
-                                                <span class="text-muted small">/ {{ listing.get_unit_display }}</span>
+                                        <div class="mb-2">
+                                            <div class="d-flex justify-content-between text-muted small mb-1">
+                                                <span>Quantity:</span>
+                                                <strong>{{ listing.quantity_available|floatformat:2 }} {{ listing.get_unit_display }}</strong>
                                             </div>
-                                            <span class="badge bg-light text-dark">
-                                                <i class="bi bi-box-seam"></i> 
-                                                {{ listing.quantity_available }} {{ listing.get_unit_display }}{{ listing.quantity_available|pluralize }}
-                                            </span>
+                                            <div class="d-flex justify-content-between text-muted small mb-1">
+                                                <span>Price:</span>
+                                                <strong class="text-success">KES {{ listing.price_expected|floatformat:2|default:"0.00" }}/{{ listing.get_unit_display }}</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between text-muted small mb-1">
+                                                <span>Total Value:</span>
+                                                <strong class="text-primary">KES {{ listing.quantity_available|multiply:listing.price_expected|floatformat:2 }}</strong>
+                                            </div>
+                                            <div class="d-flex justify-content-between text-muted small">
+                                                <span>Available:</span>
+                                                <strong>{{ listing.available_from|date:"M d, Y" }}</strong>
+                                            </div>
                                         </div>
-                                        
-                                        <!-- Bidding Form -->
-                                        <form method="post" action="{% url 'place_bid' listing.id %}" id="bid-form-{{ listing.id }}" class="mb-3">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="listing_id" value="{{ listing.id }}">
-                                            
-                                            <div class="mb-2">
-                                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                                    <label for="quantity-{{ listing.id }}" class="form-label small text-muted mb-0">
-                                                        Quantity ({{ listing.get_unit_display }})
-                                                    </label>
-                                                    <small class="text-muted">
-                                                        Max: {{ listing.quantity_available|floatformat:2 }}
-                                                    </small>
-                                                </div>
-                                                <input type="number" 
-                                                       class="form-control form-control-sm" 
-                                                       id="quantity-{{ listing.id }}" 
-                                                       name="quantity_requested" 
-                                                       min="0.01" 
-                                                       max="{{ listing.quantity_available|floatformat:2 }}" 
-                                                       step="0.01"
-                                                       data-max-quantity="{{ listing.quantity_available|floatformat:2 }}"
-                                                       value="{{ listing.quantity_available|floatformat:2 }}" 
-                                                       required 
-                                                       onchange="calculateTotal('{{ listing.id }}')">
-                                                <div class="invalid-feedback" id="quantity-feedback-{{ listing.id }}">
-                                                    Please enter a valid quantity (max {{ listing.quantity_available|floatformat:2 }})
-                                                </div>
-                                                <div class="form-text small text-muted">
-                                                    Available: {{ listing.quantity_available|floatformat:2 }} {{ listing.get_unit_display }}
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="mb-2">
-                                                <label for="price-{{ listing.id }}" class="form-label small text-muted">
-                                                    Your Price (KES) - Min: {{ listing.price_expected|floatformat:2|default:"Negotiable" }}
-                                                </label>
-                                                <div class="input-group input-group-sm">
-                                                    <span class="input-group-text">KES</span>
-                                                    <input type="number" 
-                                                           class="form-control" 
-                                                           id="price-{{ listing.id }}" 
-                                                           name="price_per_unit" 
-                                                           min="{% if listing.price_expected %}{{ listing.price_expected|floatformat:2 }}{% else %}0.01{% endif %}" 
-                                                           step="0.01" 
-                                                           value="{{ listing.price_expected|floatformat:2|default:'' }}" 
-                                                           required
-                                                           onchange="calculateTotal('{{ listing.id }}')">
-                                                </div>
-                                                <div class="invalid-feedback" id="price-feedback-{{ listing.id }}">
-                                                    Price must be at least KES {{ listing.price_expected|floatformat:2 }}
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="mb-3">
-                                                <label class="form-label small text-muted">Total Amount</label>
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <h5 class="mb-0" id="total-{{ listing.id }}">
-                                                        KES {{ listing.price_expected|floatformat:2|default:"0.00" }}
-                                                    </h5>
-                                                    <button type="submit" class="btn btn-sm btn-success" id="bid-button-{{ listing.id }}">
-                                                        <i class="bi bi-gavel me-1"></i> Place Bid
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </form>
                                         
                                         <!-- Bid Status -->
                                         {% with bid=listing.get_user_bid request=request %}
                                             {% if bid %}
-                                            <div class="alert alert-{{ bid.get_status_class }} p-2 mb-0 mt-2">
+                                            <div class="alert alert-{{ bid.get_status_class }} p-2 mb-0 mt-2" onclick="event.stopPropagation();">
                                                 <div class="d-flex justify-content-between align-items-center">
                                                     <div>
                                                         <i class="bi {{ bid.get_status_icon }}"></i>
                                                         <span class="ms-1">{{ bid.get_status_display }}</span>
                                                         {% if bid.status == 'accepted' %}
-                                                            <a href="#" class="alert-link ms-2" data-bs-toggle="modal" 
-                                                               data-bs-target="#paymentModal" 
-                                                               data-bid-id="{{ bid.id }}" 
-                                                               data-amount="{{ bid.total_price|floatformat:2 }}">
-                                                                Make Payment
+                                                            <a href="{% url 'broker_bid_detail' bid.id %}" class="alert-link ms-2" onclick="event.stopPropagation();">
+                                                                View Details
                                                             </a>
                                                         {% endif %}
                                                     </div>
                                                     {% if bid.status == 'pending' %}
-                                                        <form method="post" action="{% url 'cancel_bid' bid.id %}" class="d-inline">
+                                                        <form method="post" action="{% url 'cancel_bid' bid.id %}" class="d-inline" onclick="event.stopPropagation();">
                                                             {% csrf_token %}
                                                             <button type="submit" class="btn btn-sm btn-outline-danger" 
                                                                     onclick="return confirm('Are you sure you want to cancel this bid?')">
-                                                                Cancel Bid
+                                                                <i class="bi bi-x"></i>
                                                             </button>
                                                         </form>
                                                     {% endif %}
                                                 </div>
+                                            </div>
+                                            {% else %}
+                                            <div class="text-center mt-3">
+                                                <small class="text-muted">Click to view details and place bid</small>
                                             </div>
                                             {% endif %}
                                         {% endwith %}
@@ -391,6 +335,7 @@
                                         </div>
                                     </div>
                                 </div>
+                                </a>
                             </div>
                         {% endfor %}
                     {% else %}
@@ -494,35 +439,22 @@
                                 <i class="bi bi-phone"></i> M-Pesa
                             </label>
                         </div>
-                        <div class="form-check mt-2">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="card" value="card">
-                            <label class="form-check-label" for="card">
-                                <i class="bi bi-credit-card"></i> Credit/Debit Card
-                            </label>
-                        </div>
                     </div>
                     
                     <div id="mpesaPayment" class="payment-method">
-                        <div class="alert alert-info">
-                            <small>You will receive an M-Pesa payment prompt on your phone to complete the transaction.</small>
-                        </div>
-                    </div>
-                    
-                    <div id="cardPayment" class="payment-method d-none">
-                        <div class="mb-3">
-                            <label for="cardNumber" class="form-label">Card Number</label>
-                            <input type="text" class="form-control" id="cardNumber" placeholder="1234 5678 9012 3456">
-                        </div>
-                        <div class="row">
-                            <div class="col-6">
-                                <label for="expiryDate" class="form-label">Expiry Date</label>
-                                <input type="text" class="form-control" id="expiryDate" placeholder="MM/YY">
+                        <form id="mpesaPaymentForm">
+                            <div class="mb-3">
+                                <label for="phoneNumber" class="form-label">M-Pesa Phone Number <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" id="phoneNumber" name="phone_number" 
+                                       placeholder="254712345678" 
+                                       value="{% if user.profile.mpesa_number %}{{ user.profile.mpesa_number }}{% elif user.profile.phone %}{{ user.profile.phone }}{% endif %}"
+                                       required>
+                                <div class="form-text">Enter the phone number registered with M-Pesa</div>
                             </div>
-                            <div class="col-6">
-                                <label for="cvv" class="form-label">CVV</label>
-                                <input type="text" class="form-control" id="cvv" placeholder="123">
+                            <div class="alert alert-info">
+                                <small>You will receive an M-Pesa payment prompt on this number to complete the transaction.</small>
                             </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -602,16 +534,6 @@
                 });
             });
             
-            // Toggle payment methods
-            const paymentMethods = document.querySelectorAll('input[name="paymentMethod"]');
-            paymentMethods.forEach(method => {
-                method.addEventListener('change', function() {
-                    document.querySelectorAll('.payment-method').forEach(div => {
-                        div.classList.add('d-none');
-                    });
-                    document.getElementById(`${this.value}Payment`).classList.remove('d-none');
-                });
-            });
             
             // Handle payment modal show event
             const paymentModal = document.getElementById('paymentModal');
@@ -626,13 +548,12 @@
                     // Update the confirm payment button
                     const confirmBtn = document.getElementById('confirmPayment');
                     confirmBtn.onclick = function() {
-                        // Here you would typically process the payment
-                        // For now, we'll just show a success message
-                        alert('Payment of KES ' + amount + ' processed successfully!');
-                        
-                        // Close the modal
-                        const modal = bootstrap.Modal.getInstance(paymentModal);
-                        modal.hide();
+                        const phoneNumber = document.getElementById('phoneNumber').value;
+                        if (!phoneNumber) {
+                            alert('Please enter your M-Pesa phone number');
+                            return;
+                        }
+                        window.location.href = `/payments/bid/${bidId}/create/?phone_number=${encodeURIComponent(phoneNumber)}`;
                     };
                 });
             }

@@ -35,9 +35,6 @@
                     <li class="nav-item">
                         <a class="nav-link active" href="{% url 'farmer_dashboard' %}">Dashboard</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">About</a>
-                    </li>
                 </ul>
             </div>
         </div>
@@ -70,9 +67,8 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="bi bi-bell me-2"></i>Notifications
-                                <span class="badge bg-danger ms-2">3</span>
+                            <a class="nav-link" href="{% url 'nearby_brokers' %}">
+                                <i class="bi bi-people me-2"></i>Nearby Brokers
                             </a>
                         </li>
                         <li class="nav-item">
@@ -225,17 +221,18 @@
 
                                 <!-- Brokers List -->
                                 <div id="brokersList" style="max-height: 400px; overflow-y: auto;">
-                                    {% if brokers %}
-                                        {% for broker in brokers %}
+                                    {% if nearby_brokers %}
+                                        {% for broker_info in nearby_brokers %}
+                                            {% with broker=broker_info.broker %}
                                             <div class="broker-card mb-3 p-3 border rounded">
                                                 <div class="d-flex align-items-start">
                                                     <div class="broker-avatar me-3 bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
-                                                        {{ broker.user.first_name|first|upper }}
+                                                        {{ broker.user.first_name|first|upper }}{% if not broker.user.first_name %}{{ broker.user.username|first|upper }}{% endif %}
                                                     </div>
                                                     <div class="flex-grow-1">
                                                         <div class="d-flex justify-content-between align-items-start">
                                                             <div>
-                                                                <h6 class="mb-1">{{ broker.user.first_name }} {{ broker.user.last_name }}</h6>
+                                                                <h6 class="mb-1">{{ broker.user.get_full_name|default:broker.user.username }}</h6>
                                                                 {% if broker.is_verified %}
                                                                     <span class="badge bg-success">
                                                                         <i class="bi bi-patch-check-fill"></i> Verified
@@ -248,22 +245,33 @@
                                                         </div>
                                                         <div class="mt-2">
                                                             <small class="text-muted">
+                                                                <i class="bi bi-map me-1"></i>{{ broker_info.active_routes }} active route{{ broker_info.active_routes|pluralize }}
+                                                            </small>
+                                                        </div>
+                                                        {% if broker.phone %}
+                                                        <div class="mt-2">
+                                                            <small class="text-muted">
                                                                 <i class="bi bi-telephone me-1"></i>{{ broker.phone }}
                                                             </small>
                                                         </div>
                                                         <div class="mt-2">
-                                                            <button class="btn btn-sm btn-outline-success" onclick="contactBroker('{{ broker.phone }}')">
+                                                            <a href="tel:{{ broker.phone }}" class="btn btn-sm btn-outline-success">
                                                                 <i class="bi bi-telephone me-1"></i>Contact
-                                                            </button>
+                                                            </a>
                                                         </div>
+                                                        {% endif %}
                                                     </div>
                                                 </div>
                                             </div>
+                                            {% endwith %}
                                         {% endfor %}
                                     {% else %}
                                         <div class="text-center py-4">
                                             <i class="bi bi-truck text-muted" style="font-size: 3rem;"></i>
-                                            <p class="text-muted mt-2">No brokers available</p>
+                                            <p class="text-muted mt-2">No brokers available in your area</p>
+                                            <a href="{% url 'nearby_brokers' %}" class="btn btn-sm btn-outline-success mt-2">
+                                                <i class="bi bi-people me-1"></i>View All Brokers
+                                            </a>
                                         </div>
                                     {% endif %}
                                 </div>
@@ -349,20 +357,42 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Quantity (kg)</label>
-                            <input type="number" class="form-control" name="quantity" required min="1">
+                            <label class="form-label">Quality</label>
+                            <select class="form-select" name="quality" required>
+                                <option value="standard" selected>Standard</option>
+                                <option value="premium">Premium</option>
+                                <option value="organic">Organic</option>
+                                <option value="grade_a">Grade A</option>
+                                <option value="grade_b">Grade B</option>
+                            </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Expected Price (KES/kg)</label>
-                            <input type="number" class="form-control" name="price" required min="1" step="0.01">
+                            <label class="form-label">Unit</label>
+                            <select class="form-select" name="unit" required>
+                                <option value="kg" selected>Kilograms (kg)</option>
+                                <option value="ton">Tons</option>
+                                <option value="bag">Bags</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Quantity Available</label>
+                            <input type="number" class="form-control" name="quantity_available" required min="0.01" step="0.01">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Expected Price (KES/unit)</label>
+                            <input type="number" class="form-control" name="price_expected" required min="0.01" step="0.01">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Location/Origin</label>
+                            <input type="text" class="form-control" name="origin_text" required placeholder="Enter location">
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Available From</label>
                             <input type="date" class="form-control" name="available_from" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Description</label>
-                            <textarea class="form-control" name="description" rows="3"></textarea>
+                            <label class="form-label">Notes/Description</label>
+                            <textarea class="form-control" name="notes" rows="3"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">

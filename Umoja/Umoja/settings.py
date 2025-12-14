@@ -103,11 +103,10 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Payhero Configuration
-# For production, use environment variables with python-decouple:
-# from decouple import config
-# PAYHERO_API_KEY = config('PAYHERO_API_KEY', default='')
-PAYHERO_API_KEY = os.environ.get('PAYHERO_API_KEY', 'your_payhero_api_key_here')
-PAYHERO_SECRET_KEY = os.environ.get('PAYHERO_SECRET_KEY', 'your_payhero_secret_key_here')
-PAYHERO_BASE_URL = os.environ.get('PAYHERO_BASE_URL', 'https://api.payhero.com')
-PAYHERO_WEBHOOK_SECRET = os.environ.get('PAYHERO_WEBHOOK_SECRET', 'your_webhook_secret_here')
+# Payhero Configuration - Using python-decouple (lines 13-19 above)
+# The settings above (lines 13-19) use config() from python-decouple
+# Remove the duplicate settings below if not needed
+# PAYHERO_API_KEY = os.environ.get('PAYHERO_API_KEY', 'your_payhero_api_key_here')
+# PAYHERO_SECRET_KEY = os.environ.get('PAYHERO_SECRET_KEY', 'your_payhero_secret_key_here')
+# PAYHERO_BASE_URL = os.environ.get('PAYHERO_BASE_URL', 'https://api.payhero.com')
+# PAYHERO_WEBHOOK_SECRET = os.environ.get('PAYHERO_WEBHOOK_SECRET', 'your_webhook_secret_here')

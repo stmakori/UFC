@@ -1,28 +1,56 @@
-# Umoja Farmer Connect
+# Umoja Farmers Connect
 
-A multi-role marketplace and logistics app connecting farmers and brokers for efficient produce trading and collection.
+A Django-based marketplace platform connecting farmers and brokers for efficient agricultural produce trading in Kenya.
 
-## Features
+## 🌾 Overview
 
-- **Farmers**: Create produce listings, receive bids from brokers, accept/reject bids, and receive payments
-- **Brokers**: Browse farmer listings, place bids, manage routes, and make payments
-- **Payment System**: Integrated payment tracking with M-Pesa, Stripe, and manual payment options
-- **Route Management**: Brokers can create and manage collection routes with GPS coordinates
+Umoja Farmers Connect is a web application that facilitates direct connections between farmers and brokers, enabling fair produce trading, transparent pricing, and streamlined payment processing. The platform helps farmers find buyers for their produce while allowing brokers to discover quality agricultural products.
 
-## Prerequisites
+## ✨ Features
+
+### For Farmers
+- **Product Listings**: Create and manage produce listings with details like quantity, quality, price, and location
+- **Bid Management**: Receive and review bids from brokers, accept or reject offers
+- **Payment Tracking**: Monitor payment status for accepted bids
+- **Nearby Brokers**: Discover brokers operating in your area
+- **Dashboard**: View statistics, active listings, and bid status
+
+### For Brokers
+- **Marketplace**: Browse available produce listings from farmers
+- **Bid Placement**: Place bids on farmer listings with quantity and price
+- **Route Management**: Create and manage collection routes with GPS coordinates
+- **Payment Integration**: Make payments via M-Pesa (Payhero integration) or manual methods
+- **Bid Tracking**: Monitor bid status and manage accepted bids
+
+### Payment System
+- **M-Pesa Integration**: STK Push payments via Payhero API
+- **Payment History**: Track all transactions
+- **Payment Details**: View comprehensive payment information
+- **Webhook Support**: Automatic payment status updates
+
+## 🛠️ Technology Stack
+
+- **Backend**: Django 6.0
+- **Database**: SQLite (development), PostgreSQL (production-ready)
+- **Frontend**: Bootstrap 5, Bootstrap Icons
+- **Payment Gateway**: Payhero (M-Pesa STK Push)
+- **Python**: 3.8+
+
+## 📋 Prerequisites
 
 - Python 3.8 or higher
 - pip (Python package manager)
-- SQLite (included with Python)
+- Virtual environment (recommended)
 
-## Installation & Setup
+## 🚀 Installation
 
-### 1. Navigate to Project Directory
+### 1. Clone the Repository
 ```bash
-cd /home/korr1e/Desktop/UFC/Umoja
+git clone <repository-url>
+cd Umoja
 ```
 
-### 2. Create Virtual Environment (Recommended)
+### 2. Create Virtual Environment
 ```bash
 python3 -m venv venv
 source venv/bin/activate  # On Linux/Mac
@@ -32,150 +60,174 @@ venv\Scripts\activate  # On Windows
 
 ### 3. Install Dependencies
 ```bash
-pip install django pillow
+pip install django pillow python-decouple requests
 ```
 
-Or if you have a requirements.txt:
+### 4. Environment Configuration
+Create a `.env` file in the project root:
+```env
+SECRET_KEY=your_django_secret_key_here
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+# Payhero Configuration (for M-Pesa payments)
+PAYHERO_API_KEY=your_api_key
+PAYHERO_SECRET_KEY=your_secret_key
+PAYHERO_ACCOUNT_ID=your_account_id
+PAYHERO_BASIC_AUTH_TOKEN=your_basic_auth_token
+PAYHERO_BASE_URL=https://api.payhero.com
+PAYHERO_CHANNEL_ID=your_channel_id
+PAYHERO_WEBHOOK_SECRET=your_webhook_secret
+```
+
+### 5. Database Setup
 ```bash
-pip install -r requirements.txt
+python manage.py migrate
 ```
 
-### 4. Run Database Migrations
+### 6. Create Superuser (Optional)
 ```bash
-python3 manage.py migrate
+python manage.py createsuperuser
 ```
 
-This will:
-- Create the database tables
-- Apply all migrations including the new bid system models
-
-### 5. Create Superuser (Optional - for admin access)
+### 7. Run Development Server
 ```bash
-python3 manage.py createsuperuser
+python manage.py runserver
 ```
 
-Follow the prompts to create an admin account.
+Visit `http://127.0.0.1:8000/` in your browser.
 
-### 6. Run the Development Server
-```bash
-python3 manage.py runserver
-```
-
-The server will start at `http://127.0.0.1:8000/`
-
-## Usage
-
-### Accessing the Application
-
-1. **Home Page**: `http://127.0.0.1:8000/`
-2. **Admin Panel**: `http://127.0.0.1:8000/admin/` (requires superuser)
-
-### User Registration
-
-1. Click "Register" on the home page
-2. Choose your role: **Farmer** or **Broker**
-3. Fill in your details and submit
-
-### For Farmers
-
-1. **Create Listings**: Go to "My Products" → "Add Product"
-   - Enter produce type, quantity, quality, location (with optional GPS coordinates)
-   - Set expected price (optional)
-   - Mark available from date
-
-2. **View Bids**: Go to "Incoming Bids"
-   - See all bids placed by brokers on your listings
-   - Accept or reject bids
-   - View bid details including broker info and proposed price
-
-3. **Receive Payments**: Payments are automatically tracked when brokers pay for accepted bids
-
-### For Brokers
-
-1. **Browse Marketplace**: Go to "Marketplace"
-   - Search and filter farmer listings
-   - View listing details
-
-2. **Place Bids**: 
-   - Click on a listing → "Place Bid"
-   - Enter quantity, price per unit
-   - Optionally link to a route for pickup
-   - Submit bid
-
-3. **Manage Bids**: Go to "My Bids"
-   - View all your bids and their status
-   - Cancel pending bids
-   - Make payments for accepted bids
-
-4. **Create Routes**: Go to "My Routes" → "Create Route"
-   - Set origin, destination, stops (with coordinates)
-   - Set date, time, capacity, and price per kg
-
-5. **Make Payments**: 
-   - When a bid is accepted, go to "My Bids"
-   - Click "Make Payment" on accepted bids
-   - Enter payment method (M-Pesa/Stripe/Manual) and transaction ID
-   - Payment status will be tracked
-
-## Payment Flow
-
-1. **Broker places bid** → Status: `pending`
-2. **Farmer accepts bid** → Status: `accepted`
-3. **Broker creates payment** → Payment status: `paid`
-4. **Broker marks as collected** → Bid status: `collected`, Payment status: `released`
-5. **Broker marks as completed** → Bid status: `completed`
-
-## Color Theme
-
-The application uses a **dark green nature theme**:
-- Primary: `#1B5E20` (Dark forest green)
-- Secondary: `#2E7D32` (Medium dark green)
-- Accent: `#388E3C` (Lighter green)
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 Umoja/
-├── umoja/              # Main app
-│   ├── models.py       # Database models (FarmerProduct, Bid, Payment, etc.)
-│   ├── views.py        # View functions
-│   ├── urls.py         # URL routing
-│   └── admin.py        # Admin configuration
-├── templates/          # HTML templates
-├── static/             # CSS, JS, images
-├── media/              # User uploaded files
-└── manage.py          # Django management script
+├── umoja/                  # Main Django app
+│   ├── models.py          # Database models (FarmerProduct, Bid, Payment, Route, etc.)
+│   ├── views.py           # View functions and business logic
+│   ├── urls.py            # URL routing
+│   ├── admin.py           # Django admin configuration
+│   ├── forms.py           # Form definitions
+│   ├── templatetags/      # Custom template tags
+│   └── migrations/        # Database migrations
+├── templates/             # HTML templates
+│   ├── index.html         # Home page
+│   ├── pages/             # Page templates
+│   └── components/        # Reusable components
+├── static/                # Static files (CSS, JS, images)
+├── media/                 # User uploaded files
+├── Umoja/                 # Django project settings
+│   ├── settings.py        # Project settings
+│   ├── urls.py            # Root URL configuration
+│   └── wsgi.py            # WSGI configuration
+└── manage.py              # Django management script
 ```
 
-## Troubleshooting
+## 🔑 Key Models
+
+- **UserProfile**: Extended user information (user type, location, phone)
+- **FarmerProduct**: Produce listings created by farmers
+- **Bid**: Bids placed by brokers on farmer listings
+- **Payment**: Payment records for accepted bids
+- **Route**: Collection routes created by brokers
+- **Review**: Reviews and ratings
+
+## 🔄 User Workflow
+
+### Farmer Workflow
+1. Register/Login as Farmer
+2. Create produce listing (type, quantity, quality, price, location)
+3. Receive bids from brokers
+4. Review and accept/reject bids
+5. Receive payment notifications
+6. Track completed transactions
+
+### Broker Workflow
+1. Register/Login as Broker
+2. Browse marketplace for available produce
+3. Place bids on listings
+4. Wait for farmer acceptance
+5. Make payment for accepted bids
+6. Create routes for collection
+7. Track bid status and payments
+
+## 🔐 Security Features
+
+- User authentication and authorization
+- Role-based access control (Farmer/Broker)
+- CSRF protection
+- Secure payment processing
+- Webhook signature validation
+
+## 🌐 API Integration
+
+### Payhero M-Pesa Integration
+- STK Push for mobile payments
+- Webhook support for payment status updates
+- Transaction tracking and verification
+
+## 🧪 Testing
+
+To test the payment integration:
+1. Access `/admin/test-payhero/` (superuser only)
+2. Verify Payhero settings
+3. Test STK Push with a valid phone number
+
+## 📝 Environment Variables
+
+All sensitive configuration is managed through environment variables using `python-decouple`. See `.env.example` for required variables.
+
+## 🐛 Troubleshooting
 
 ### Migration Issues
-If you encounter migration errors:
 ```bash
-python3 manage.py makemigrations
-python3 manage.py migrate
+python manage.py makemigrations
+python manage.py migrate
 ```
 
 ### Static Files Not Loading
 ```bash
-python3 manage.py collectstatic
+python manage.py collectstatic
 ```
 
 ### Database Reset (Development Only)
 ```bash
 rm db.sqlite3
-python3 manage.py migrate
-python3 manage.py createsuperuser
+python manage.py migrate
+python manage.py createsuperuser
 ```
 
-## Development Notes
+## 🤝 Contributing
 
-- The project uses SQLite for development (no additional database setup needed)
-- Media files are stored in the `media/` directory
-- Static files are in the `static/` directory
-- All user roles are managed through the `UserProfile` model
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## Support
+## 📄 License
 
-For issues or questions, check the code comments or Django documentation.
+This project is licensed under the MIT License.
 
+## 👥 Authors
+
+- Umoja Development Team
+
+## 🙏 Acknowledgments
+
+- Django community
+- Bootstrap team
+- Payhero for payment integration
+
+## 📞 Support
+
+For issues or questions, please open an issue on GitHub or contact the development team.
+
+---
+
+**Note**: This is a development version. For production deployment, ensure:
+- Set `DEBUG=False`
+- Configure proper database (PostgreSQL recommended)
+- Set up proper static file serving
+- Configure secure HTTPS
+- Set up proper logging
+- Review and harden security settings

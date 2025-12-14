@@ -1,0 +1,157 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Payhero Connection - Umoja</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0"><i class="bi bi-gear me-2"></i>Payhero Integration Test</h4>
+                    </div>
+                    <div class="card-body">
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        <!-- Settings Check -->
+                        <div class="mb-4">
+                            <h5>1. Settings Configuration</h5>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>Setting</th>
+                                    <th>Value</th>
+                                    <th>Status</th>
+                                </tr>
+                                <tr>
+                                    <td>Base URL</td>
+                                    <td><code>{{ results.settings_check.base_url }}</code></td>
+                                    <td>
+                                        {% if results.settings_check.base_url != 'NOT SET' %}
+                                            <span class="badge bg-success">✓ Set</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">✗ Not Set</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Auth Token</td>
+                                    <td><code>{{ results.settings_check.auth_token_preview }}</code></td>
+                                    <td>
+                                        {% if results.settings_check.has_auth_token %}
+                                            <span class="badge bg-success">✓ Set</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">✗ Not Set</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Channel ID</td>
+                                    <td><code>{{ results.settings_check.channel_id }}</code></td>
+                                    <td>
+                                        {% if results.settings_check.channel_id != 'NOT SET' %}
+                                            <span class="badge bg-success">✓ Set</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">⚠ Default</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Webhook Secret</td>
+                                    <td><code>***</code></td>
+                                    <td>
+                                        {% if results.settings_check.webhook_secret_set %}
+                                            <span class="badge bg-success">✓ Set</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">⚠ Not Set</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        {% if results.errors %}
+                        <div class="alert alert-danger">
+                            <h6>Issues Found:</h6>
+                            <ul class="mb-0">
+                                {% for error in results.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- API Test -->
+                        <div class="mb-4">
+                            <h5>2. API Connection Test</h5>
+                            <form method="POST">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="test_phone" class="form-label">Test Phone Number</label>
+                                    <input type="tel" class="form-control" id="test_phone" name="test_phone" 
+                                           value="254712345678" placeholder="254712345678">
+                                    <div class="form-text">Enter a test phone number (will send 1 KES test payment)</div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-play-circle me-1"></i>Test API Connection
+                                </button>
+                            </form>
+                            
+                            {% if results.api_test %}
+                            <div class="mt-3">
+                                <h6>Test Results:</h6>
+                                <div class="alert alert-{% if results.api_test.success %}success{% else %}warning{% endif %}">
+                                    <strong>Status Code:</strong> {{ results.api_test.status_code }}<br>
+                                    {% if results.api_test.success %}
+                                        <strong>✅ Connection Successful!</strong><br>
+                                        Payhero API is reachable and credentials are valid.
+                                    {% else %}
+                                        <strong>⚠️ Connection Issue</strong><br>
+                                        Check the response details below.
+                                    {% endif %}
+                                </div>
+                                
+                                <details>
+                                    <summary class="btn btn-sm btn-outline-secondary">View Full Response</summary>
+                                    <pre class="mt-2 p-3 bg-light rounded"><code>{{ results.api_test.response_body|pprint }}</code></pre>
+                                </details>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Instructions -->
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-info-circle me-2"></i>Instructions</h6>
+                            <ol class="mb-0">
+                                <li>Check that all settings are configured (green badges)</li>
+                                <li>Click "Test API Connection" to verify Payhero API is reachable</li>
+                                <li>If test succeeds, the payment integration should work</li>
+                                <li>If test fails, check the error messages and verify your credentials</li>
+                                <li>Make sure your <code>.env</code> file has all Payhero credentials set</li>
+                            </ol>
+                        </div>
+                        
+                        <a href="{% url 'broker_dashboard' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

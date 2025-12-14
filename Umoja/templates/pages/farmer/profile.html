@@ -33,9 +33,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'farmer_dashboard' %}">Dashboard</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">About</a>
-                    </li>
                 </ul>
             </div>
         </div>
@@ -53,19 +50,18 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">
+                            <a class="nav-link" href="{% url 'farmer_products' %}">
                                 <i class="bi bi-box-seam me-2"></i>My Products
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link active" href="#">
+                            <a class="nav-link active" href="{% url 'farmer_profile' %}">
                                 <i class="bi bi-person me-2"></i>Profile
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#">
-                                <i class="bi bi-bell me-2"></i>Notifications
-                                <span class="badge bg-danger ms-2">3</span>
+                            <a class="nav-link" href="{% url 'nearby_brokers' %}">
+                                <i class="bi bi-people me-2"></i>Nearby Brokers
                             </a>
                         </li>
                         <li class="nav-item">
@@ -130,7 +126,7 @@
                                 </div>
                                 <div class="d-flex justify-content-between mb-3">
                                     <span class="text-muted">Completed Orders</span>
-                                    <strong>{{ completed_orders }}</strong>
+                                    <strong>{{ completed_bids }}</strong>
                                 </div>
                                 <div class="d-flex justify-content-between mb-3">
                                     <span class="text-muted">Success Rate</span>

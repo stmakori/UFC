@@ -5,112 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Bids - Umoja Farmer Connect</title>
-    
     <!-- Bootstrap 5 CSS -->
-    <link href="[https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css](https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css)" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="[https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css](https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css)">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
-    <style>
-        .stat-card {
-            background: #fff;
-            border-radius: 8px;
-            padding: 1.25rem;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            height: 100%;
-            transition: transform 0.2s;
-        }
-        .stat-card:hover {
-            transform: translateY(-2px);
-        }
-        .dashboard-card {
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            margin-bottom: 1.5rem;
-        }
-        .dashboard-card .card-body {
-            padding: 1.5rem;
-        }
-        .dashboard-sidebar {
-            background-color: #f8f9fa;
-            min-height: calc(100vh - 56px);
-            border-right: 1px solid #dee2e6;
-        }
-        .nav-link {
-            color: #495057;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.25rem;
-            margin: 0.25rem 0.5rem;
-            transition: all 0.2s;
-        }
-        .nav-link:hover, .nav-link.active {
-            background-color: #e9ecef;
-            color: #0d6efd;
-        }
-        .nav-link i {
-            width: 20px;
-            text-align: center;
-            margin-right: 8px;
-        }
-        .logout-btn {
-            color: #dc3545;
-        }
-        .logout-btn:hover {
-            background-color: #f8d7da;
-        }
-        .table th {
-            font-weight: 600;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: #6c757d;
-            border-top: none;
-        }
-        .table td {
-            vertical-align: middle;
-        }
-        .badge {
-            font-weight: 500;
-            padding: 0.4em 0.8em;
-        }
-        .avatar-sm {
-                        width: 36px;
-            height: 36px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            background-color: #e9ecef;
-            color: #6c757d;
-        }
-        .dropdown-menu {
-            border: none;
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
-            border-radius: 8px;
-            padding: 0.5rem;
-        }
-        .dropdown-item {
-            border-radius: 4px;
-            padding: 0.5rem 1rem;
-            margin: 0.1rem 0;
-        }
-        .dropdown-item:hover {
-            background-color: #f8f9fa;
-        }
-        .page-item.active .page-link {
-            background-color: #198754;
-            border-color: #198754;
-        }
-        .page-link {
-            color: #198754;
-        }
-        .page-link:hover {
-            color: #0f6848;
-        }
-    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -131,7 +32,22 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'broker_dashboard' %}">Dashboard</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'broker_bids' %}">My Bids</a>
+                    </li>
                 </ul>
+                <div class="ms-3">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle me-1"></i> {{ user.get_full_name|default:user.username }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="{% url 'update_profile' %}"><i class="bi bi-person me-2"></i>Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </nav>
@@ -144,32 +60,32 @@
                     <ul class="nav flex-column">
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'broker_dashboard' %}">
-                                <i class="bi bi-speedometer2"></i>Dashboard
+                                <i class="bi bi-speedometer2 me-2"></i>Dashboard
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'broker_routes' %}">
-                                <i class="bi bi-map"></i>My Routes
+                                <i class="bi bi-map me-2"></i>My Routes
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'broker_marketplace' %}">
-                                <i class="bi bi-shop"></i>Marketplace
+                                <i class="bi bi-shop me-2"></i>Marketplace
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link active" href="{% url 'broker_bids' %}">
-                                <i class="bi bi-cart3"></i>My Bids
+                                <i class="bi bi-cart3 me-2"></i>My Bids
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'payment_history' %}">
-                                <i class="bi bi-currency-exchange"></i>Payments
+                                <i class="bi bi-currency-exchange me-2"></i>Payments
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link logout-btn" href="{% url 'logout' %}">
-                                <i class="bi bi-box-arrow-right"></i>Logout
+                                <i class="bi bi-box-arrow-right me-2"></i>Logout
                             </a>
                         </li>
                     </ul>
@@ -190,62 +106,76 @@
                     </div>
                 {% endif %}
 
-                <!-- Header -->
-                <div class="d-flex justify-content-between flex-wrap align-items-center mb-4">
-                    <div>
-                        <h2 class="mb-1">My Bids</h2>
-                        <p class="text-muted">Track and manage all your bids in one place</p>
+                <!-- Page Header -->
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+                    <div class="mb-3 mb-md-0">
+                        <h1 class="h3 mb-2">My Bids</h1>
+                        <p class="text-muted mb-0">Track and manage all your bids in one place</p>
+                        <nav aria-label="breadcrumb" class="mt-2">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="{% url 'broker_dashboard' %}">Dashboard</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">My Bids</li>
+                            </ol>
+                        </nav>
                     </div>
-                    <div>
-                        <a href="{% url 'broker_marketplace' %}" class="btn btn-success">
-                            <i class="bi bi-plus-circle me-2"></i>Place New Bid
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'broker_marketplace' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i> New Bid
                         </a>
                     </div>
                 </div>
 
                 <!-- Stats Cards -->
-                <div class="row g-3 mb-4">
-                    <div class="col-md-3">
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6 col-lg-3">
                         <div class="stat-card">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="text-muted mb-1">Total Bids</h6>
-                                    <h3 class="mb-0">{{ bids.paginator.count|default:0 }}</h3>
+                                    <p class="text-muted mb-1">Pending</p>
+                                    <h3 class="mb-0">{{ pending_count }}</h3>
                                 </div>
-                                <i class="bi bi-cart3 text-primary fs-1 opacity-25"></i>
+                                <div class="stat-icon text-warning">
+                                    <i class="bi bi-hourglass-split"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-6 col-lg-3">
                         <div class="stat-card">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="text-muted mb-1">Pending</h6>
-                                    <h3 class="mb-0">{{ pending_count|default:0 }}</h3>
+                                    <p class="text-muted mb-1">Accepted</p>
+                                    <h3 class="mb-0">{{ accepted_count }}</h3>
                                 </div>
-                                <i class="bi bi-clock-history text-warning fs-1 opacity-25"></i>
+                                <div class="stat-icon text-success">
+                                    <i class="bi bi-check-circle"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-6 col-lg-3">
                         <div class="stat-card">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="text-muted mb-1">Accepted</h6>
-                                    <h3 class="mb-0">{{ accepted_count|default:0 }}</h3>
+                                    <p class="text-muted mb-1">Rejected</p>
+                                    <h3 class="mb-0">{{ rejected_count }}</h3>
                                 </div>
-                                <i class="bi bi-check-circle text-success fs-1 opacity-25"></i>
+                                <div class="stat-icon text-danger">
+                                    <i class="bi bi-x-circle"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-6 col-lg-3">
                         <div class="stat-card">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="text-muted mb-1">Total Spent</h6>
-                                    <h3 class="mb-0">KES {{ total_spent|default:0|floatformat:2 }}</h3>
+                                    <p class="text-muted mb-1">Completed</p>
+                                    <h3 class="mb-0">{{ completed_count }}</h3>
                                 </div>
-                                <i class="bi bi-currency-exchange text-info fs-1 opacity-25"></i>
+                                <div class="stat-icon text-info">
+                                    <i class="bi bi-check2-all"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -253,10 +183,19 @@
 
                 <!-- Filter and Search -->
                 <div class="dashboard-card mb-4">
-                    <div class="card-body">
+                    <div class="card-body p-0">
                         <form method="GET" action="{% url 'broker_bids' %}" id="bidsFilterForm">
-                            <div class="row g-3">
-                                <div class="col-md-3">
+                            <div class="row g-3 p-4 pb-2">
+                                <div class="col-12 col-md-4">
+                                    <label for="search" class="form-label small text-muted">Search</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-transparent"><i class="bi bi-search"></i></span>
+                                        <input type="text" class="form-control" id="search" name="search" 
+                                               placeholder="Search by produce, farmer, or notes..." 
+                                               value="{{ request.GET.search|default:'' }}">
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-2">
                                     <label for="status" class="form-label small text-muted">Status</label>
                                     <select class="form-select" name="status" id="status">
                                         <option value="">All Status</option>
@@ -268,8 +207,8 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="col-md-3">
-                                    <label for="produce_type" class="form-label small text-muted">Produce Type</label>
+                                <div class="col-6 col-md-2">
+                                    <label for="produce_type" class="form-label small text-muted">Produce</label>
                                     <select class="form-select" name="produce_type" id="produce_type">
                                         <option value="">All Types</option>
                                         {% for value, label in produce_types %}
@@ -280,7 +219,7 @@
                                         {% endfor %}
                                     </select>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-6 col-md-2">
                                     <label for="date_range" class="form-label small text-muted">Date Range</label>
                                     <select class="form-select" name="date_range" id="date_range">
                                         <option value="">All Time</option>
@@ -291,27 +230,49 @@
                                         <option value="custom" {% if request.GET.date_range == 'custom' %}selected{% endif %}>Custom Range</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3 d-flex align-items-end">
+                                <div class="col-6 col-md-2 d-flex align-items-end">
                                     <button type="submit" class="btn btn-primary w-100">
-                                        <i class="bi bi-funnel me-1"></i> Apply Filters
+                                        <i class="bi bi-funnel me-1"></i> Filter
                                     </button>
                                 </div>
                             </div>
                             
                             <!-- Hidden fields for custom date range -->
-                            <div id="customDateRange" class="row g-3 mt-2" 
+                            <div id="customDateRange" class="row g-3 px-4 pb-4 pt-0" 
                                 {% if request.GET.date_range == 'custom' %}style="display: block;"{% else %}style="display: none;"{% endif %}>
-                                <div class="col-md-6">
+                                <div class="col-12 col-md-6">
                                     <label for="start_date" class="form-label small text-muted">Start Date</label>
                                     <input type="date" class="form-control" id="start_date" name="start_date" 
                                            value="{{ request.GET.start_date }}">
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-12 col-md-6">
                                     <label for="end_date" class="form-label small text-muted">End Date</label>
                                     <input type="date" class="form-control" id="end_date" name="end_date" 
                                            value="{{ request.GET.end_date }}">
                                 </div>
                             </div>
+                            
+                            <!-- Active filters -->
+                            {% if request.GET.urlencode %}
+                                <div class="bg-light border-top p-3">
+                                    <div class="d-flex align-items-center">
+                                        <small class="text-muted me-2">Active filters:</small>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            {% for key, value in request.GET.items %}
+                                                {% if key != 'page' and value %}
+                                                    <span class="badge bg-light text-dark border">
+                                                        {{ key|title }}: {{ value }}
+                                                        <a href="?{% for k, v in request.GET.items %}{% if k != key and k != 'page' %}{{ k }}={{ v }}{% if not forloop.last %}&{% endif %}{% endif %}{% endfor %}" class="ms-2 text-decoration-none">
+                                                            <i class="bi bi-x"></i>
+                                                        </a>
+                                                    </span>
+                                                {% endif %}
+                                            {% endfor %}
+                                            <a href="?" class="ms-2 small">Clear all</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
                         </form>
                     </div>
                 </div>
@@ -321,139 +282,107 @@
                     <div class="card-body">
                         {% if bids %}
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle">
-                                    <thead class="table-light">
+                                <table class="table table-hover table-custom">
+                                    <thead>
                                         <tr>
-                                            <th>BID #</th>
-                                            <th>LISTING DETAILS</th>
-                                            <th>FARMER</th>
-                                            <th>QUANTITY</th>
-                                            <th>PRICE</th>
-                                            <th>TOTAL</th>
-                                            <th>STATUS</th>
-                                            <th>DATE</th>
-                                            <th>ACTIONS</th>
+                                            <th>Produce</th>
+                                            <th>Farmer</th>
+                                            <th>Quantity</th>
+                                            <th>Price/Unit</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for bid in bids %}
                                             <tr>
-                                                <td><strong>#{{ bid.id }}</strong></td>
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         {% if bid.listing.image %}
-                                                            <img src="{{ bid.listing.image.url }}" 
-                                                                 alt="{{ bid.listing.get_produce_type_display }}" 
-                                                                 class="rounded me-2" 
-                                                                 style="width: 40px; height: 40px; object-fit: cover;">
+                                                            <img src="{{ bid.listing.image.url }}" alt="{{ bid.listing.get_produce_type_display }}" 
+                                                                 class="img-fluid rounded me-2" style="width: 40px; height: 40px; object-fit: cover;">
                                                         {% else %}
                                                             <div class="bg-light rounded d-flex align-items-center justify-content-center me-2" 
                                                                  style="width: 40px; height: 40px;">
-                                                                <i class="bi bi-image text-muted"></i>
+                                                                <i class="bi bi-box-seam text-muted"></i>
                                                             </div>
                                                         {% endif %}
                                                         <div>
-                                                            <div class="fw-medium">{{ bid.listing.get_produce_type_display }}</div>
-                                                            <div class="text-muted small">
-                                                                <i class="bi bi-geo-alt"></i> 
-                                                                {{ bid.listing.farmer.get_location_display }}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="avatar-sm me-2">
-                                                            <i class="bi bi-person"></i>
-                                                        </div>
-                                                        <div>
                                                             <div class="fw-medium">
-                                                                {{ bid.listing.farmer.user.get_full_name|default:bid.listing.farmer.user.username }}
+                                                                {{ bid.listing.get_produce_type_display }}
                                                             </div>
                                                             <div class="text-muted small">
-                                                                <i class="bi bi-telephone"></i> 
-                                                                {{ bid.listing.farmer.phone_number|default:"N/A" }}
+                                                                {{ bid.listing.quality|title }}
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    {{ bid.quantity }} {{ bid.listing.get_unit_display }}{{ bid.quantity|pluralize }}
-                                                </td>
-                                                <td>KES {{ bid.price_per_unit|floatformat:2 }}</td>
-                                                <td><strong class="text-primary">KES {{ bid.total_price|floatformat:2 }}</strong></td>
-                                                <td>
-                                                    <span class="badge bg-{{ bid.get_status_class }} py-2 w-100">
-                                                        <i class="bi {{ bid.get_status_icon }} me-1"></i>
-                                                        {{ bid.get_status_display }}
-                                                    </span>
-                                                    {% if bid.updated_at and bid.status != 'pending' %}
-                                                        <div class="text-muted small mt-1">
-                                                            {{ bid.updated_at|timesince }} ago
-                                                        </div>
+                                                    <div class="fw-medium">
+                                                        {{ bid.listing.farmer.get_full_name|default:bid.listing.farmer.username }}
+                                                    </div>
+                                                    {% if bid.listing.farmer.phone_number %}
+                                                        <a href="tel:{{ bid.listing.farmer.phone_number }}" class="text-muted small text-decoration-none">
+                                                            <i class="bi bi-telephone me-1"></i>{{ bid.listing.farmer.phone_number }}
+                                                        </a>
+                                                    {% else %}
+                                                        <span class="text-muted small">No phone</span>
                                                     {% endif %}
                                                 </td>
                                                 <td>
-                                                    <div class="small">{{ bid.created_at|date:"M d, Y" }}</div>
-                                                    <div class="text-muted small">{{ bid.created_at|time:"h:i A" }}</div>
+                                                    <div class="fw-medium">
+                                                        {{ bid.quantity_requested|floatformat:2 }} 
+                                                        <span class="text-muted">{{ bid.listing.get_unit_display }}</span>
+                                                    </div>
                                                 </td>
                                                 <td>
-                                                    <div class="dropdown">
-                                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
-                                                                type="button" data-bs-toggle="dropdown" 
-                                                                aria-expanded="false">
-                                                            <i class="bi bi-three-dots-vertical"></i>
-                                                        </button>
-                                                        <ul class="dropdown-menu dropdown-menu-end">
-                                                            <li>
-                                                                <a class="dropdown-item" href="#" 
-                                                                   data-bs-toggle="modal" 
-                                                                   data-bs-target="#bidDetailsModal" 
-                                                                   data-bid-id="{{ bid.id }}">
-                                                                    <i class="bi bi-info-circle me-2"></i>View Details
-                                                                </a>
-                                                            </li>
-                                                            {% if bid.status == 'pending' %}
-                                                                <li>
-                                                                    <form method="post" 
-                                                                          action="{% url 'cancel_bid' bid.id %}" 
-                                                                          class="d-inline">
-                                                                        {% csrf_token %}
-                                                                        <button type="submit" 
-                                                                                class="dropdown-item text-danger" 
-                                                                                onclick="return confirm('Are you sure you want to cancel this bid?')">
-                                                                            <i class="bi bi-x-circle me-2"></i>Cancel Bid
-                                                                        </button>
-                                                                    </form>
-                                                                </li>
-                                                            {% elif bid.status == 'accepted' %}
-                                                                <li>
-                                                                    <a class="dropdown-item text-success" href="#" 
-                                                                       data-bs-toggle="modal" 
-                                                                       data-bs-target="#paymentModal" 
-                                                                       data-bid-id="{{ bid.id }}" 
-                                                                       data-amount="{{ bid.total_price|floatformat:2 }}">
-                                                                        <i class="bi bi-credit-card me-2"></i>Make Payment
-                                                                    </a>
-                                                                </li>
-                                                            {% elif bid.status == 'paid' %}
-                                                                <li>
-                                                                    <a class="dropdown-item text-info" href="#" 
-                                                                       data-bs-toggle="modal" 
-                                                                       data-bs-target="#deliveryInfoModal"
-                                                                       data-bid-id="{{ bid.id }}">
-                                                                        <i class="bi bi-truck me-2"></i>Track Delivery
-                                                                    </a>
-                                                                </li>
-                                                            {% endif %}
-                                                            <li><hr class="dropdown-divider"></li>
-                                                            <li>
-                                                                <a class="dropdown-item" 
-                                                                   href="{% url 'broker_marketplace' %}?produce_type={{ bid.listing.produce_type }}">
-                                                                    <i class="bi bi-arrow-left-right me-2"></i>View Similar Listings
-                                                                </a>
-                                                            </li>
-                                                        </ul>
+                                                    <div class="fw-medium">
+                                                        KES {{ bid.price_per_unit|floatformat:2 }}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="fw-bold">
+                                                        KES {{ bid.total_price|floatformat:2 }}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-{% if bid.status == 'accepted' %}success{% elif bid.status == 'pending' %}warning{% elif bid.status == 'rejected' %}danger{% elif bid.status == 'completed' %}primary{% else %}secondary{% endif %}">
+                                                        {{ bid.get_status_display }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="small">
+                                                        <div class="fw-medium">{{ bid.created_at|date:"M d, Y" }}</div>
+                                                        <div class="text-muted">{{ bid.created_at|date:"h:i A" }}</div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <a href="{% url 'broker_bid_detail' bid.id %}" class="btn btn-sm btn-outline-primary" title="View Bid Details">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                        {% if bid.status == 'accepted' and not bid.payments.exists %}
+                                                            <button type="button" class="btn btn-sm btn-success" 
+                                                                    data-bs-toggle="modal" 
+                                                                    data-bs-target="#paymentModal" 
+                                                                    data-bid-id="{{ bid.id }}" 
+                                                                    data-amount="{{ bid.total_price|floatformat:2 }}"
+                                                                    title="Make Payment">
+                                                                <i class="bi bi-cash"></i>
+                                                            </button>
+                                                        {% endif %}
+                                                        {% if bid.status == 'pending' %}
+                                                            <form method="post" action="{% url 'cancel_bid' bid.id %}" class="d-inline">
+                                                                {% csrf_token %}
+                                                                <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                                        onclick="return confirm('Are you sure you want to cancel this bid?')"
+                                                                        title="Cancel Bid">
+                                                                    <i class="bi bi-x-circle"></i>
+                                                                </button>
+                                                            </form>
+                                                        {% endif %}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -464,72 +393,63 @@
                             
                             <!-- Pagination -->
                             {% if bids.has_other_pages %}
-                            <nav aria-label="Bids pagination" class="mt-4">
-                                <ul class="pagination justify-content-center">
-                                    {% if bids.has_previous %}
-                                        <li class="page-item">
-                                            <a class="page-link" 
-                                               href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-                                               aria-label="First">
-                                                <span aria-hidden="true">&laquo;&laquo;</span>
-                                            </a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" 
-                                               href="?page={{ bids.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-                                               aria-label="Previous">
-                                                <span aria-hidden="true">&laquo;</span>
-                                            </a>
-                                        </li>
-                                    {% else %}
-                                        <li class="page-item disabled">
-                                            <span class="page-link">&laquo;&laquo;</span>
-                                        </li>
-                                        <li class="page-item disabled">
-                                            <span class="page-link">&laquo;</span>
-                                        </li>
-                                    {% endif %}
-                                    
-                                    {% for i in bids.paginator.page_range %}
-                                        {% if bids.number == i %}
-                                            <li class="page-item active">
-                                                <span class="page-link">{{ i }} <span class="visually-hidden">(current)</span></span>
-                                            </li>
-                                        {% elif i > bids.number|add:'-3' and i < bids.number|add:'3' %}
-                                            <li class="page-item">
-                                                <a class="page-link" 
-                                                   href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
-                                                    {{ i }}
-                                                </a>
-                                            </li>
-                                        {% endif %}
-                                    {% endfor %}
-                                    
-                                    {% if bids.has_next %}
-                                        <li class="page-item">
-                                            <a class="page-link" 
-                                               href="?page={{ bids.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-                                               aria-label="Next">
-                                                <span aria-hidden="true">&raquo;</span>
-                                            </a>
-                                        </li>
-                                        <li class="page-item">
-                                            <a class="page-link" 
-                                               href="?page={{ bids.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" 
-                                               aria-label="Last">
-                                                <span aria-hidden="true">&raquo;&raquo;</span>
-                                            </a>
-                                        </li>
-                                    {% else %}
-                                        <li class="page-item disabled">
-                                            <span class="page-link">&raquo;</span>
-                                        </li>
-                                        <li class="page-item disabled">
-                                            <span class="page-link">&raquo;&raquo;</span>
-                                        </li>
-                                    {% endif %}
-                                </ul>
-                            </nav>
+                                <div class="border-top px-4 py-3">
+                                    <nav aria-label="Bids pagination">
+                                        <ul class="pagination justify-content-center mb-0">
+                                            {% if bids.has_previous %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="First">
+                                                        <span aria-hidden="true">&laquo;&laquo;</span>
+                                                    </a>
+                                                </li>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page={{ bids.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                                                        <span aria-hidden="true">&laquo;</span>
+                                                    </a>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">&laquo;&laquo;</span>
+                                                </li>
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">&laquo;</span>
+                                                </li>
+                                            {% endif %}
+                                            
+                                            {% for i in bids.paginator.page_range %}
+                                                {% if bids.number == i %}
+                                                    <li class="page-item active">
+                                                        <span class="page-link">{{ i }} <span class="visually-hidden">(current)</span></span>
+                                                    </li>
+                                                {% elif i > bids.number|add:'-3' and i < bids.number|add:'3' %}
+                                                    <li class="page-item">
+                                                        <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                                                    </li>
+                                                {% endif %}
+                                            {% endfor %}
+                                            
+                                            {% if bids.has_next %}
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page={{ bids.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                                                        <span aria-hidden="true">&raquo;</span>
+                                                    </a>
+                                                </li>
+                                                <li class="page-item">
+                                                    <a class="page-link" href="?page={{ bids.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Last">
+                                                        <span aria-hidden="true">&raquo;&raquo;</span>
+                                                    </a>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">&raquo;</span>
+                                                </li>
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">&raquo;&raquo;</span>
+                                                </li>
+                                            {% endif %}
+                                        </ul>
+                                    </nav>
+                                </div>
                             {% endif %}
                         {% else %}
                             <div class="text-center py-5">
@@ -593,35 +513,22 @@
                                 <i class="bi bi-phone"></i> M-Pesa
                             </label>
                         </div>
-                        <div class="form-check mt-2">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="card" value="card">
-                            <label class="form-check-label" for="card">
-                                <i class="bi bi-credit-card"></i> Credit/Debit Card
-                            </label>
-                        </div>
                     </div>
                     
                     <div id="mpesaPayment" class="payment-method">
-                        <div class="alert alert-info">
-                            <small>You will receive an M-Pesa payment prompt on your phone to complete the transaction.</small>
-                        </div>
-                    </div>
-                    
-                    <div id="cardPayment" class="payment-method d-none">
-                        <div class="mb-3">
-                            <label for="cardNumber" class="form-label">Card Number</label>
-                            <input type="text" class="form-control" id="cardNumber" placeholder="1234 5678 9012 3456">
-                        </div>
-                        <div class="row">
-                            <div class="col-6">
-                                <label for="expiryDate" class="form-label">Expiry Date</label>
-                                <input type="text" class="form-control" id="expiryDate" placeholder="MM/YY">
+                        <form id="mpesaPaymentForm">
+                            <div class="mb-3">
+                                <label for="phoneNumber" class="form-label">M-Pesa Phone Number <span class="text-danger">*</span></label>
+                                <input type="tel" class="form-control" id="phoneNumber" name="phone_number" 
+                                       placeholder="254712345678" 
+                                       value="{% if user.profile.mpesa_number %}{{ user.profile.mpesa_number }}{% elif user.profile.phone %}{{ user.profile.phone }}{% endif %}"
+                                       required>
+                                <div class="form-text">Enter the phone number registered with M-Pesa</div>
                             </div>
-                            <div class="col-6">
-                                <label for="cvv" class="form-label">CVV</label>
-                                <input type="text" class="form-control" id="cvv" placeholder="123">
+                            <div class="alert alert-info">
+                                <small>You will receive an M-Pesa payment prompt on this number to complete the transaction.</small>
                             </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -679,16 +586,6 @@
                 });
             }
 
-            // Toggle payment methods
-            const paymentMethods = document.querySelectorAll('input[name="paymentMethod"]');
-            paymentMethods.forEach(method => {
-                method.addEventListener('change', function() {
-                    document.querySelectorAll('.payment-method').forEach(div => {
-                        div.classList.add('d-none');
-                    });
-                    document.getElementById(`${this.value}Payment`).classList.remove('d-none');
-                });
-            });
 
             // Handle payment modal
             const paymentModal = document.getElementById('paymentModal');
@@ -703,13 +600,14 @@
                     // Update the confirm payment button
                     const confirmBtn = document.getElementById('confirmPayment');
                     confirmBtn.onclick = function() {
-                        // Here you would typically process the payment
-                        // For now, we'll just show a success message
-                        alert('Payment of KES ' + amount + ' processed successfully for bid #' + bidId);
+                        const phoneNumber = document.getElementById('phoneNumber').value;
+                        if (!phoneNumber) {
+                            alert('Please enter your M-Pesa phone number');
+                            return;
+                        }
                         
-                        // Close the modal
-                        const modal = bootstrap.Modal.getInstance(paymentModal);
-                        modal.hide();
+                        // Redirect to create payment with phone number
+                        window.location.href = `/payments/bid/${bidId}/create/?phone_number=${encodeURIComponent(phoneNumber)}`;
                     };
                 });
             }

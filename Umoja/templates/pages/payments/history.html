@@ -254,7 +254,7 @@
                                                     <small class="text-muted">{{ payment.timestamp|time:"g:i A" }}</small>
                                                 </td>
                                                 <td>
-                                                    <a href="{% url 'broker_bids' %}" class="btn btn-sm btn-outline-primary" title="View Bid">
+                                                    <a href="{% url 'payment_detail' payment.id %}" class="btn btn-sm btn-outline-primary" title="View Payment Details">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
                                                 </td>
