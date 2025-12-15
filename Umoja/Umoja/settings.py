@@ -14,8 +14,8 @@ PAYHERO_API_KEY = config('PAYHERO_API_KEY')
 PAYHERO_SECRET_KEY = config('PAYHERO_SECRET_KEY')
 PAYHERO_ACCOUNT_ID = config('PAYHERO_ACCOUNT_ID', default='3425')
 PAYHERO_BASIC_AUTH_TOKEN = config('PAYHERO_BASIC_AUTH_TOKEN')
-PAYHERO_BASE_URL = config('PAYHERO_BASE_URL', default='https://api.payhero.com')
-PAYHERO_CHANNEL_ID = config('PAYHERO_CHANNEL_ID', default='3905')
+PAYHERO_BASE_URL = config('PAYHERO_BASE_URL', default='https://backend.payhero.co.ke')
+PAYHERO_CHANNEL_ID = config('PAYHERO_CHANNEL_ID', default='4630')
 PAYHERO_WEBHOOK_SECRET = config('PAYHERO_WEBHOOK_SECRET', default='your_actual_webhook_secret')
 
 # Login/Logout URLs

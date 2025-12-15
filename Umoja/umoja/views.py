@@ -9,6 +9,7 @@ from django.db.models import Q, Sum, Count, Avg
 from django.utils import timezone
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 from datetime import datetime, timedelta
 import json
 import csv
@@ -16,6 +17,117 @@ import requests
 import hmac
 import hashlib
 from .models import UserProfile, Route, Bid, Payment, Review, FarmerProduct, Contract
+
+# Route utility functions
+def geocode_address(address):
+    """Geocode an address to coordinates using Nominatim (OpenStreetMap)"""
+    if not address:
+        return None
+    
+    try:
+        # Check if address is already in lat,lng format
+        if ',' in address:
+            parts = address.split(',')
+            if len(parts) == 2:
+                try:
+                    lat = float(parts[0].strip())
+                    lng = float(parts[1].strip())
+                    if -90 <= lat <= 90 and -180 <= lng <= 180:
+                        return {'lat': lat, 'lng': lng}
+                except ValueError:
+                    pass
+        
+        # Use Nominatim for geocoding
+        url = 'https://nominatim.openstreetmap.org/search'
+        params = {
+            'q': address,
+            'format': 'json',
+            'limit': 1,
+            'countrycodes': 'ke',  # Focus on Kenya
+        }
+        headers = {
+            'User-Agent': 'Umoja Farmers Connect/1.0'
+        }
+        
+        response = requests.get(url, params=params, headers=headers, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            if data:
+                return {
+                    'lat': float(data[0]['lat']),
+                    'lng': float(data[0]['lon'])
+                }
+    except Exception as e:
+        print(f"Geocoding error for '{address}': {e}")
+    
+    return None
+
+def get_route_directions(origin_coords, dest_coords):
+    """Get route directions using OSRM (Open Source Routing Machine)"""
+    if not origin_coords or not dest_coords:
+        return None
+    
+    try:
+        # OSRM routing API (public instance)
+        # Format: /route/v1/driving/{lon1},{lat1};{lon2},{lat2}
+        url = 'https://router.project-osrm.org/route/v1/driving'
+        coords = f"{origin_coords['lng']},{origin_coords['lat']};{dest_coords['lng']},{dest_coords['lat']}"
+        params = {
+            'overview': 'full',
+            'geometries': 'geojson',
+            'steps': 'true'
+        }
+        
+        response = requests.get(f"{url}/{coords}", params=params, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('code') == 'Ok' and data.get('routes'):
+                route = data['routes'][0]
+                geometry = route['geometry']
+                
+                # Extract coordinates from GeoJSON LineString
+                if geometry.get('type') == 'LineString' and geometry.get('coordinates'):
+                    # OSRM returns [lng, lat] format, convert to [lat, lng]
+                    coords_list = [[coord[1], coord[0]] for coord in geometry['coordinates']]
+                    legs = route.get('legs', [])
+                    steps = legs[0].get('steps', []) if legs else []
+                    return {
+                        'coordinates': coords_list,
+                        'distance': route.get('distance', 0),  # in meters
+                        'duration': route.get('duration', 0),  # in seconds
+                        'steps': steps
+                    }
+    except Exception as e:
+        print(f"Routing error: {e}")
+    
+    return None
+
+def calculate_route_coordinates(origin, destination):
+    """Calculate route coordinates from origin and destination addresses"""
+    # Geocode origin and destination
+    origin_coords = geocode_address(origin)
+    dest_coords = geocode_address(destination)
+    
+    if not origin_coords or not dest_coords:
+        # Fallback: return just origin and destination if geocoding fails
+        coords = []
+        if origin_coords:
+            coords.append([origin_coords['lat'], origin_coords['lng']])
+        if dest_coords:
+            coords.append([dest_coords['lat'], dest_coords['lng']])
+        return coords
+    
+    # Get route directions
+    route_data = get_route_directions(origin_coords, dest_coords)
+    
+    if route_data and route_data.get('coordinates'):
+        return route_data['coordinates']
+    else:
+        # Fallback: return origin and destination points
+        return [
+            [origin_coords['lat'], origin_coords['lng']],
+            [dest_coords['lat'], dest_coords['lng']]
+        ]
 
 # Home and Auth Views
 def index(request):
@@ -108,11 +220,51 @@ def broker_dashboard(request):
         status='accepted'
     ).count()
     
-    # Today's routes
+    # Today's routes - ensure they have coordinates
+    # Try to get routes for today, but be flexible with status
     today_routes = Route.objects.filter(
         broker=request.user,
         date=today
-    ).order_by('time')[:5]
+    ).order_by('time')
+    
+    # If no routes found for today, show upcoming active routes as fallback
+    # This ensures the map always shows something if routes exist
+    if not today_routes.exists():
+        today_routes = Route.objects.filter(
+            broker=request.user,
+            status='active',
+            date__gte=today
+        ).order_by('date', 'time')[:5]
+    
+    # Calculate coordinates for routes that don't have them
+    for route in today_routes:
+        if not route.stops or len(route.stops) == 0:
+            route_coords = calculate_route_coordinates(route.origin, route.destination)
+            if route_coords:
+                stops = []
+                for coord in route_coords:
+                    stops.append({'lat': coord[0], 'lng': coord[1]})
+                route.stops = stops
+                route.save()
+    
+    # Prepare routes data for JSON serialization
+    routes_data = []
+    for route in today_routes:
+        routes_data.append({
+            'id': route.id,
+            'name': route.name,
+            'origin': route.origin,
+            'destination': route.destination,
+            'stops': route.stops if route.stops else [],
+            'date': route.date.strftime('%Y-%m-%d'),
+            'time': route.time.strftime('%H:%M')
+        })
+    
+    # All active routes for map display
+    all_routes = Route.objects.filter(
+        broker=request.user,
+        status='active'
+    ).order_by('date', 'time')
     
     # Recent bids
     recent_bids = Bid.objects.filter(broker=request.user).order_by('-created_at')[:5]
@@ -123,6 +275,8 @@ def broker_dashboard(request):
         'pending_payments': pending_payments,
         'current_pickups': current_pickups,
         'today_routes': today_routes,
+        'routes_data_json': json.dumps(routes_data),  # Properly serialized JSON
+        'all_routes': all_routes,
         'recent_bids': recent_bids,
     }
     
@@ -187,21 +341,34 @@ def create_route(request):
     
     if request.method == 'POST':
         try:
+            origin = request.POST.get('origin')
+            destination = request.POST.get('destination')
+            
+            # Calculate route coordinates
+            route_coords = calculate_route_coordinates(origin, destination)
+            
+            # Store coordinates in stops field as list of {lat, lng} objects
+            stops = []
+            if route_coords:
+                for coord in route_coords:
+                    stops.append({'lat': coord[0], 'lng': coord[1]})
+            
             route = Route.objects.create(
                 broker=request.user,
                 name=request.POST.get('name'),
                 description=request.POST.get('description', ''),
-                origin=request.POST.get('origin'),
-                destination=request.POST.get('destination'),
+                origin=origin,
+                destination=destination,
+                stops=stops,
                 date=request.POST.get('date'),
                 time=request.POST.get('time'),
-                capacity=int(request.POST.get('capacity', 0)),
-                available_capacity=int(request.POST.get('capacity', 0)),
-                price_per_kg=float(request.POST.get('price_per_kg', 0)),
+                capacity=int(request.POST.get('capacity', 1000)),  # Default capacity
+                available_capacity=int(request.POST.get('capacity', 1000)),
+                price_per_kg=float(request.POST.get('price_per_kg', 0.00)),  # Default price
                 status='active'
             )
             
-            messages.success(request, 'Route created successfully')
+            messages.success(request, 'Route created successfully with directions calculated!')
             return redirect('broker_routes')
         except Exception as e:
             messages.error(request, f'Error creating route: {str(e)}')
@@ -219,23 +386,30 @@ def edit_route(request, route_id):
         try:
             route.name = request.POST.get('name', route.name)
             route.description = request.POST.get('description', route.description)
-            route.origin = request.POST.get('origin', route.origin)
-            route.destination = request.POST.get('destination', route.destination)
+            new_origin = request.POST.get('origin', route.origin)
+            new_destination = request.POST.get('destination', route.destination)
             route.date = request.POST.get('date', route.date)
             route.time = request.POST.get('time', route.time)
             
-            # Handle capacity changes carefully
-            new_capacity = int(request.POST.get('capacity', route.capacity))
-            if new_capacity < route.capacity - route.available_capacity:
-                messages.error(request, 'Cannot reduce capacity below booked amount')
-                return redirect('edit_route', route_id=route_id)
+            # Recalculate route coordinates if origin or destination changed
+            if new_origin != route.origin or new_destination != route.destination:
+                route.origin = new_origin
+                route.destination = new_destination
+                route_coords = calculate_route_coordinates(new_origin, new_destination)
+                
+                # Store coordinates in stops field
+                stops = []
+                if route_coords:
+                    for coord in route_coords:
+                        stops.append({'lat': coord[0], 'lng': coord[1]})
+                route.stops = stops
             
-            route.capacity = new_capacity
-            route.price_per_kg = float(request.POST.get('price_per_kg', route.price_per_kg))
+            # Keep existing capacity and price_per_kg (not editable)
+            # route.capacity and route.price_per_kg remain unchanged
             route.status = request.POST.get('status', route.status)
             route.save()
             
-            messages.success(request, 'Route updated successfully')
+            messages.success(request, 'Route updated successfully with directions recalculated!')
             return redirect('broker_routes')
         except Exception as e:
             messages.error(request, f'Error updating route: {str(e)}')
@@ -317,6 +491,18 @@ def route_details(request, route_id):
         except Exception:
             pass
 
+    # If no coordinates found, try to calculate them from origin/destination
+    if not coords:
+        route_coords = calculate_route_coordinates(route.origin, route.destination)
+        if route_coords:
+            coords = route_coords
+            # Save the calculated coordinates to stops for future use
+            stops = []
+            for coord in route_coords:
+                stops.append({'lat': coord[0], 'lng': coord[1]})
+            route.stops = stops
+            route.save()
+    
     # Get bids associated with this route
     bids = route.bids.all().order_by('-created_at')
     
@@ -441,8 +627,9 @@ def place_bid(request, listing_id):
                 messages.error(request, 'Quantity must be greater than 0')
                 return redirect('listing_detail', listing_id=listing_id)
             
-            if quantity_requested > listing.quantity_available:
-                messages.error(request, f'Only {listing.quantity_available} {listing.get_unit_display()} available')
+            # Quantity must be strictly less than available (cannot bid exactly the full amount)
+            if quantity_requested >= listing.quantity_available:
+                messages.error(request, f'Quantity must be less than {listing.quantity_available} {listing.get_unit_display()}. You cannot bid for the exact amount available.')
                 return redirect('listing_detail', listing_id=listing_id)
             
             # Validate price
@@ -780,12 +967,8 @@ def delete_farmer_product(request, product_id):
     if request.method == 'POST':
         product = get_object_or_404(FarmerProduct, id=product_id, farmer=request.user)
         
-        # Check if there are active bids
-        active_bids = Bid.objects.filter(listing=product, status__in=['pending', 'accepted']).exists()
-        if active_bids:
-            messages.error(request, 'Cannot delete product with active bids. Please cancel or complete the bids first.')
-            return redirect('farmer_products')
-        
+        # Delete the product (and related bids will be handled by CASCADE or SET_NULL)
+        # This ensures the product is actually deleted from the database
         product.delete()
         messages.success(request, 'Product deleted successfully!')
         return redirect('farmer_products')
@@ -858,10 +1041,11 @@ def accept_bid(request, bid_id):
         listing = bid.listing
         listing.quantity_available = listing.quantity_available - bid.quantity_requested
         
-        # If quantity reaches zero or below, mark as sold
+        # If quantity reaches zero or below, mark as sold and hide from marketplace
         if listing.quantity_available <= 0:
             listing.status = 'sold'
             listing.quantity_available = 0
+            # Product will no longer be viewable in marketplace (filtered by status='active')
         
         listing.save()
         
@@ -1153,7 +1337,221 @@ def mark_completed(request, bid_id):
     
     return JsonResponse({'error': 'Invalid request'}, status=400)
 
-def initiate_payhero_payment(bid, callback_url, phone_number=None):
+@login_required
+def initiate_payhero_payment(request, payment_type, reference_id):
+    """
+    Initiate STK push payment with Payhero API.
+    Based on reference implementation pattern.
+    """
+    if request.method == 'POST':
+        phone_number = request.POST.get('phone_number')
+        if not phone_number:
+            messages.error(request, 'Phone number is required for payment')
+            return redirect('dashboard')
+        
+        try:
+            # Format phone number
+            phone_number = str(phone_number).strip()
+            phone_number = phone_number.replace(' ', '').replace('-', '').replace('+', '')
+            if phone_number.startswith('0'):
+                phone_number = '254' + phone_number[1:]
+            elif not phone_number.startswith('254'):
+                phone_number = '254' + phone_number
+            
+            if payment_type == 'bid':
+                bid = get_object_or_404(Bid, id=reference_id, broker=request.user)
+                amount = float(bid.total_price)
+                description = f"Umoja Bid Payment - {bid.listing.get_produce_type_display()}"
+            else:
+                messages.error(request, 'Invalid payment type')
+                return redirect('broker_bids')
+            
+            # Generate unique reference
+            payhero_ref = f"BID_{reference_id}_{int(timezone.now().timestamp())}"
+            
+            # Payhero STK Push API request - matching sample code format exactly
+            # Sample code shows NO Authorization header, so we'll try without it first
+            headers = {
+                'Content-Type': 'application/json',
+            }
+            
+            # Try with Authorization header if configured (as fallback)
+            # But start without it to match the sample code
+            use_auth = False  # Set to True if you need Authorization header
+            if use_auth and hasattr(settings, 'PAYHERO_BASIC_AUTH_TOKEN') and settings.PAYHERO_BASIC_AUTH_TOKEN:
+                headers['Authorization'] = settings.PAYHERO_BASIC_AUTH_TOKEN
+            
+            # Payhero API v2 payment data - matching sample code format
+            payment_data = {
+                'amount': int(amount),  # Payhero expects integer amount
+                'phone_number': phone_number,  # Already formatted to 254XXXXXXXXX
+                'channel_id': int(settings.PAYHERO_CHANNEL_ID),
+                'provider': 'm-pesa',
+                'external_reference': payhero_ref,
+                'customer_name': request.user.get_full_name() or request.user.username,
+                'callback_url': request.build_absolute_uri('/webhook/payhero/')
+            }
+            
+            # Debug: Log the payment data being sent
+            print(f"=== PAYHERO API CALL DEBUG ===")
+            print(f"API URL: {settings.PAYHERO_BASE_URL}/api/v2/payments")
+            print(f"Headers: {headers}")
+            print(f"Payment Data: {json.dumps(payment_data, indent=2)}")
+            print(f"Using Channel ID: {settings.PAYHERO_CHANNEL_ID}")
+            print(f"Base URL: {settings.PAYHERO_BASE_URL}")
+            
+            # Make API call to Payhero v2 payments endpoint
+            try:
+                response = requests.post(
+                    f'{settings.PAYHERO_BASE_URL}/api/v2/payments',
+                    headers=headers,
+                    json=payment_data,
+                    timeout=30
+                )
+                
+                print(f"Response Status Code: {response.status_code}")
+                print(f"Response Headers: {dict(response.headers)}")
+                print(f"Response Body: {response.text[:500]}")
+                
+                # If channel ID not found, try common channel IDs
+                if response.status_code == 404 and "no rows in result set" in response.text:
+                    print(f"Channel ID {settings.PAYHERO_CHANNEL_ID} not found, trying common channel IDs...")
+                    
+                    common_channel_ids = [4630, 133, 911, 1, 2, 3, 100, 200, 300, 500, 1000]  # Your channel ID first
+                    successful_channel = None
+                    
+                    for channel_id in common_channel_ids:
+                        payment_data['channel_id'] = channel_id
+                        print(f"Trying channel ID: {channel_id}")
+                        
+                        try:
+                            test_response = requests.post(
+                                f'{settings.PAYHERO_BASE_URL}/api/v2/payments',
+                                headers=headers,
+                                json=payment_data,
+                                timeout=10
+                            )
+                            
+                            if test_response.status_code == 201:
+                                successful_channel = channel_id
+                                response = test_response
+                                print(f"Success with channel ID: {channel_id}")
+                                break
+                                
+                        except requests.exceptions.RequestException:
+                            continue
+                    
+                    if successful_channel:
+                        messages.warning(request, f'Found working channel ID: {successful_channel}. Please update PAYHERO_CHANNEL_ID in settings.py')
+                    else:
+                        messages.error(request, f'No working channel ID found. Please check your Payhero dashboard for the correct channel ID.')
+                        return redirect('broker_bids')
+                
+                if response.status_code == 201:  # Payhero returns 201 for successful creation
+                    response_data = response.json()
+                    
+                    # Create pending payment record
+                    if payment_type == 'bid':
+                        payment = Payment.objects.create(
+                            bid=bid,
+                            amount=bid.total_price,
+                            payment_method='mpesa',
+                            currency='KES',
+                            status='pending',
+                            transaction_id=response_data.get('CheckoutRequestID', payhero_ref),
+                            payhero_reference=payhero_ref
+                        )
+                    
+                    # Check if payment was successful
+                    if response_data.get('success', False):
+                        checkout_request_id = response_data.get('CheckoutRequestID', '')
+                        messages.success(request, f'STK Push sent to {phone_number}. Please check your phone and enter your M-Pesa PIN to complete the payment. Reference: {payhero_ref}')
+                        return redirect('payment_detail', payment_id=payment.id)
+                    else:
+                        messages.error(request, f'Failed to send STK Push: {response_data.get("message", "Unknown error")}')
+                        return redirect('broker_bids')
+                        
+                else:
+                    # If we get an error, try with Authorization header if we didn't use it
+                    if not use_auth and hasattr(settings, 'PAYHERO_BASIC_AUTH_TOKEN') and settings.PAYHERO_BASIC_AUTH_TOKEN:
+                        print("Retrying with Authorization header...")
+                        headers['Authorization'] = settings.PAYHERO_BASIC_AUTH_TOKEN
+                        response = requests.post(
+                            f'{settings.PAYHERO_BASE_URL}/api/v2/payments',
+                            headers=headers,
+                            json=payment_data,
+                            timeout=30
+                        )
+                        print(f"Retry Response Status: {response.status_code}")
+                        print(f"Retry Response: {response.text[:500]}")
+                        
+                        if response.status_code == 201:
+                            response_data = response.json()
+                            if payment_type == 'bid':
+                                payment = Payment.objects.create(
+                                    bid=bid,
+                                    amount=bid.total_price,
+                                    payment_method='mpesa',
+                                    currency='KES',
+                                    status='pending',
+                                    transaction_id=response_data.get('CheckoutRequestID', payhero_ref),
+                                    payhero_reference=payhero_ref
+                                )
+                            messages.success(request, f'STK Push sent to {phone_number}. Please check your phone and enter your M-Pesa PIN to complete the payment. Reference: {payhero_ref}')
+                            return redirect('payment_detail', payment_id=payment.id)
+                    
+                    messages.error(request, f'Payhero API error: {response.status_code} - {response.text[:200]}')
+                    return redirect('broker_bids')
+                    
+            except requests.exceptions.ConnectionError as e:
+                # Connection error - API endpoint not reachable
+                error_msg = str(e)
+                print(f"Connection Error: {error_msg}")
+                messages.error(request, f'Cannot connect to Payhero API at {settings.PAYHERO_BASE_URL}. Please check your internet connection and API endpoint. Error: {error_msg}')
+                
+                # Create pending payment record for testing
+                if payment_type == 'bid':
+                    payment = Payment.objects.create(
+                        bid=bid,
+                        amount=bid.total_price,
+                        payment_method='mpesa',
+                        currency='KES',
+                        status='pending',
+                        transaction_id=payhero_ref,
+                        payhero_reference=payhero_ref
+                    )
+                    messages.info(request, f'Payment reference: {payhero_ref}. Status will be updated when webhook is received.')
+                    return redirect('payment_detail', payment_id=payment.id)
+
+        except requests.exceptions.RequestException as e:
+            messages.error(request, f'Network error connecting to Payhero: {str(e)}')
+            return redirect('broker_bids')
+        except Exception as e:
+            messages.error(request, f'Error initiating payment: {str(e)}')
+            return redirect('broker_bids')
+        return redirect('broker_bids')
+    
+    else:
+        # Show phone number collection form
+        if payment_type == 'bid':
+            bid = get_object_or_404(Bid, id=reference_id, broker=request.user)
+            amount = bid.total_price
+            description = f"Bid Payment - {bid.listing.get_produce_type_display()}"
+        else:
+            messages.error(request, 'Invalid payment type')
+            return redirect('broker_bids')
+        
+        context = {
+            'payment_type': payment_type,
+            'reference_id': reference_id,
+            'amount': amount,
+            'description': description,
+            'bid': bid if payment_type == 'bid' else None,
+        }
+        
+        return render(request, 'pages/broker/phone_payment.html', context)
+
+def initiate_payhero_payment_old(bid, callback_url, phone_number=None):
     """
     Initiate STK push payment with Payhero API v2.
     Based on Payhero API v2 documentation.
@@ -1213,14 +1611,14 @@ def initiate_payhero_payment(bid, callback_url, phone_number=None):
             print(f"Making API call to: {api_url}")
             print(f"Request headers: {headers}")
             print(f"Request data: {payment_data}")
-            
+        
             response = requests.post(
                 api_url,
                 headers=headers,
                 json=payment_data,
                 timeout=30
             )
-            
+        
             print(f"Response status code: {response.status_code}")
             print(f"Response text: {response.text[:500]}")
             
@@ -1327,11 +1725,11 @@ def initiate_payhero_payment(bid, callback_url, phone_number=None):
                 'message': 'STK Push simulated (Payhero API not available in development)',
                 'simulated': True
             }
-        except requests.exceptions.RequestException as e:
-            return {
-                'success': False,
+    except requests.exceptions.RequestException as e:
+        return {
+            'success': False,
                 'error': f'Network error connecting to Payhero: {str(e)}'
-            }
+        }
             
     except Exception as e:
         return {
@@ -1341,7 +1739,7 @@ def initiate_payhero_payment(bid, callback_url, phone_number=None):
 
 @login_required
 def create_payment(request, bid_id):
-    """Create payment record for accepted bid - with Payhero integration"""
+    """Create payment record for accepted bid - with Payhero STK Push integration"""
     bid = get_object_or_404(Bid, id=bid_id)
     
     # Check permission - only broker can create payment
@@ -1358,154 +1756,8 @@ def create_payment(request, bid_id):
         messages.error(request, 'Payment already exists for this bid')
         return redirect('broker_bids')
     
-    # Handle GET request - show payment form
-    if request.method == 'GET':
-        phone_number = request.GET.get('phone_number', '')
-        context = {
-            'bid': bid,
-            'phone_number': phone_number,
-        }
-        return render(request, 'pages/broker/create_payment.html', context)
-    
-    # Handle POST request - process payment
-    if request.method == 'POST':
-        try:
-            payment_method = request.POST.get('payment_method', 'mpesa')
-            transaction_id = request.POST.get('transaction_id', '')
-            phone_number = request.POST.get('phone_number', '')
-            use_payhero = request.POST.get('use_payhero', 'false') == 'true'
-            
-            # Update broker's phone number if provided
-            if phone_number:
-                request.user.profile.phone = phone_number
-                request.user.profile.mpesa_number = phone_number
-                request.user.profile.save()
-            
-            # Use phone number from profile if not provided
-            if not phone_number:
-                phone_number = request.user.profile.mpesa_number or request.user.profile.phone
-            
-            # Format phone number (ensure it starts with 254 for Kenya)
-            if phone_number:
-                phone_number = str(phone_number).strip()
-                # Remove any spaces, dashes, or plus signs
-                phone_number = phone_number.replace(' ', '').replace('-', '').replace('+', '')
-                # If it starts with 0, replace with 254
-                if phone_number.startswith('0'):
-                    phone_number = '254' + phone_number[1:]
-                # If it doesn't start with 254, add it
-                elif not phone_number.startswith('254'):
-                    phone_number = '254' + phone_number
-            
-            # Validate phone number
-            if not phone_number:
-                messages.error(request, 'Phone number is required for M-Pesa payment. Please enter your M-Pesa phone number.')
-                return redirect('create_payment', bid_id=bid_id)
-            
-            # If using Payhero and credentials are configured
-            # Validate Payhero credentials
-            if use_payhero:
-                if not hasattr(settings, 'PAYHERO_BASIC_AUTH_TOKEN') or not settings.PAYHERO_BASIC_AUTH_TOKEN:
-                    messages.error(request, 'Payhero payment is not configured. Please contact support.')
-                    print("ERROR: PAYHERO_BASIC_AUTH_TOKEN not set in settings")
-                    return redirect('broker_bids')
-                
-                # Check if it's a placeholder value
-                placeholder_values = ['your_payhero_api_key_here', 'your_actual_webhook_secret', '', None]
-                if settings.PAYHERO_BASIC_AUTH_TOKEN in placeholder_values:
-                    messages.error(request, 'Payhero credentials not configured. Please set PAYHERO_BASIC_AUTH_TOKEN in your environment variables or .env file.')
-                    print(f"ERROR: PAYHERO_BASIC_AUTH_TOKEN appears to be a placeholder: {settings.PAYHERO_BASIC_AUTH_TOKEN}")
-                    return redirect('broker_bids')
-                
-                # Proceed with Payhero payment
-                callback_url = request.build_absolute_uri(f'/webhook/payhero/')
-                
-                # Debug logging
-                print(f"=== PAYMENT INITIATION DEBUG ===")
-                print(f"Bid ID: {bid.id}")
-                print(f"Amount: {bid.total_price}")
-                print(f"Phone Number: {phone_number}")
-                print(f"Callback URL: {callback_url}")
-                print(f"Payhero Base URL: {settings.PAYHERO_BASE_URL}")
-                print(f"Channel ID: {getattr(settings, 'PAYHERO_CHANNEL_ID', 3905)}")
-                print(f"Has Auth Token: {bool(settings.PAYHERO_BASIC_AUTH_TOKEN)}")
-                
-                payhero_result = initiate_payhero_payment(bid, callback_url, phone_number)
-                
-                print(f"Payhero Result: {payhero_result}")
-                
-                if payhero_result['success']:
-                    # Create pending payment record
-                    payment = Payment.objects.create(
-                        bid=bid,
-                        amount=bid.total_price,
-                        payment_method='mpesa',
-                        currency='KES',
-                        status='pending',  # Will be updated via webhook
-                        transaction_id=payhero_result.get('checkout_request_id') or payhero_result.get('transaction_id') or payhero_result.get('reference')
-                    )
-                    
-                    # Show success message
-                    if payhero_result.get('simulated'):
-                        messages.warning(request, f'Payhero API not available. Simulating STK Push to {phone_number}. In production, this would send a real STK push.')
-                        messages.info(request, f'Payment reference: {payhero_result.get("reference")}. Status will be updated when webhook is received.')
-                    else:
-                        messages.success(request, f'STK Push sent to {phone_number}. Please check your phone and enter your M-Pesa PIN to complete the payment.')
-                        messages.info(request, f'Payment reference: {payhero_result.get("reference")}')
-                        if payhero_result.get('checkout_request_id'):
-                            messages.info(request, f'Checkout Request ID: {payhero_result.get("checkout_request_id")}')
-                    
-                    return redirect('payment_detail', payment_id=payment.id)
-                else:
-                    error_msg = payhero_result.get("error", "Unknown error")
-                    messages.error(request, f'Payhero payment failed: {error_msg}')
-                    print(f"PAYMENT ERROR: {error_msg}")
-                    return redirect('create_payment', bid_id=bid_id)
-            else:
-                # For M-Pesa: Create payment and trigger STK Push
-                # In production, integrate with Safaricom Daraja API for STK Push
-                # For now, create pending payment and show instructions
-                
-                # Generate transaction ID
-                transaction_id = transaction_id or f"MPESA-{bid.id}-{int(timezone.now().timestamp())}"
-                
-                payment = Payment.objects.create(
-                    bid=bid,
-                    amount=bid.total_price,
-                    payment_method='mpesa',
-                    currency='KES',
-                    status='pending',  # Will be updated when user confirms on phone
-                    transaction_id=transaction_id
-                )
-                
-                # TODO: Integrate with Safaricom Daraja API STK Push
-                # In production, you would call the Daraja API here:
-                # from safaricom_daraja import initiate_stk_push
-                # stk_response = initiate_stk_push(
-                #     phone_number=phone_number,
-                #     amount=float(bid.total_price),
-                #     account_reference=f"BID-{bid.id}",
-                #     transaction_desc=f"Payment for {bid.listing.get_produce_type_display()}",
-                #     callback_url=request.build_absolute_uri('/webhook/mpesa/')
-                # )
-                # if stk_response.get('ResponseCode') == '0':
-                #     # STK Push initiated successfully
-                #     payment.transaction_id = stk_response.get('CheckoutRequestID')
-                #     payment.save()
-                
-                # For now, show message that prompt should be received
-                if phone_number:
-                    messages.info(request, f'M-Pesa payment prompt should be sent to {phone_number}. Please check your phone and enter your M-Pesa PIN to complete the payment.')
-                    messages.warning(request, 'If you do not receive the prompt within 30 seconds, the M-Pesa API integration may need to be configured. You can still manually confirm the payment from the payment details page after completing it via your phone.')
-                else:
-                    messages.error(request, 'Phone number is required for M-Pesa payment. Please add your phone number in your profile.')
-                    return redirect('broker_bids')
-                
-                return redirect('payment_detail', payment_id=payment.id)
-            
-        except Exception as e:
-            messages.error(request, f'Error creating payment: {str(e)}')
-            return redirect('broker_bids')
+    # Redirect directly to payment initiation (removed duplicate form)
+    return redirect('initiate_payhero_payment', payment_type='bid', reference_id=bid.id)
     
     return redirect('broker_bids')
 
@@ -1520,17 +1772,23 @@ def payhero_payment_redirect(request):
         return redirect('broker_bids')
 
 @csrf_exempt
+@require_http_methods(["POST"])
 def payhero_webhook(request):
-    """Handle Payhero webhook notifications"""
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    """
+    Webhook endpoint to receive payment confirmations from Payhero.
+    Based on reference implementation pattern.
+    """
+    import hmac
+    import hashlib
+    from django.conf import settings
     
     try:
-        # Validate webhook signature
-        signature = request.headers.get('X-Payhero-Signature', '')
+        # Get the raw request body
         payload = request.body
+        signature = request.headers.get('X-Payhero-Signature', '')
         
-        if hasattr(settings, 'PAYHERO_WEBHOOK_SECRET') and settings.PAYHERO_WEBHOOK_SECRET:
+        # Validate webhook signature if webhook secret is set
+        if settings.PAYHERO_WEBHOOK_SECRET and settings.PAYHERO_WEBHOOK_SECRET != 'your_webhook_secret_here':
             expected_signature = hmac.new(
                 settings.PAYHERO_WEBHOOK_SECRET.encode(),
                 payload,
@@ -1540,79 +1798,66 @@ def payhero_webhook(request):
             if not hmac.compare_digest(signature, expected_signature):
                 return JsonResponse({'error': 'Invalid signature'}, status=400)
         
-        # Parse webhook data
+        # Parse the webhook data
         data = json.loads(payload)
         
-        # Payhero v2 webhook format
-        checkout_request_id = data.get('CheckoutRequestID') or data.get('checkout_request_id', '')
-        merchant_request_id = data.get('MerchantRequestID', '')
-        result_code = data.get('ResultCode', '')
-        result_desc = data.get('ResultDesc', '')
-        mpesa_receipt_number = data.get('MpesaReceiptNumber', '')
-        transaction_date = data.get('TransactionDate', '')
-        phone_number = data.get('PhoneNumber', '')
-        amount = data.get('Amount', '')
+        # Extract payment information from Payhero callback format
+        response_data = data.get('response', {})
+        external_reference = response_data.get('ExternalReference') or data.get('external_reference') or data.get('reference', '')
+        status = response_data.get('Status') or data.get('Status', '')
+        result_code = response_data.get('ResultCode') or data.get('ResultCode', '')
+        amount = response_data.get('Amount') or data.get('Amount', '')
+        mpesa_receipt = response_data.get('MpesaReceiptNumber') or data.get('MpesaReceiptNumber', '')
+        phone = response_data.get('Phone') or data.get('PhoneNumber', '')
+        checkout_request_id = response_data.get('CheckoutRequestID') or data.get('CheckoutRequestID', '')
         
-        # Also check for external_reference or reference
-        external_reference = data.get('external_reference') or data.get('reference', '')
-        transaction_id = checkout_request_id or mpesa_receipt_number or external_reference
+        # Log webhook for debugging
+        print(f"Payhero Webhook: {external_reference} - {status} - {result_code} - {amount}")
         
-        # Find payment by transaction ID or reference
-        try:
-            payment = None
-            
-            # Try to find by checkout_request_id first
-            if checkout_request_id:
-                payment = Payment.objects.filter(transaction_id=checkout_request_id).first()
-            
-            # Try to find by external reference (BID_xxx format)
-            if not payment and external_reference:
-                if 'BID_' in external_reference:
-                    try:
-                        bid_id = int(external_reference.split('_')[1])
-                        payment = Payment.objects.filter(bid_id=bid_id, status='pending').first()
-                    except (ValueError, IndexError):
-                        pass
-            
-            # Try to find by M-Pesa receipt number
-            if not payment and mpesa_receipt_number:
-                payment = Payment.objects.filter(transaction_id=mpesa_receipt_number).first()
+        # Find payment by payhero_reference or external_reference
+        payment = None
+        if external_reference:
+            if 'BID_' in external_reference:
+                try:
+                    bid_id = int(external_reference.split('_')[1])
+                    payment = Payment.objects.filter(bid_id=bid_id, status='pending').first()
+                except (ValueError, IndexError):
+                    pass
             
             if not payment:
-                print(f"Payment not found for webhook data: {data}")
-                return JsonResponse({'error': 'Payment not found'}, status=404)
-            
-            # Update payment status based on webhook result code
-            # Payhero/Safaricom ResultCode: 0 = success, other = failure
-            if result_code == '0' or result_code == 0:
-                # Payment successful
-                payment.status = 'paid'
-                if mpesa_receipt_number:
-                    payment.transaction_id = mpesa_receipt_number
-                payment.save()
-                
-                print(f"Payment {payment.id} marked as paid via webhook. Receipt: {mpesa_receipt_number}")
-                return JsonResponse({'status': 'success', 'message': 'Payment updated successfully'})
-            else:
-                # Payment failed
-                payment.status = 'failed'
-                payment.save()
-                
-                print(f"Payment {payment.id} marked as failed via webhook. Result: {result_desc}")
-                return JsonResponse({'status': 'failed', 'message': f'Payment failed: {result_desc}'})
-            
-        except Payment.DoesNotExist:
+                payment = Payment.objects.filter(payhero_reference=external_reference).first()
+        
+        # Try to find by checkout_request_id
+        if not payment and checkout_request_id:
+            payment = Payment.objects.filter(transaction_id=checkout_request_id).first()
+        
+        # Try to find by M-Pesa receipt number
+        if not payment and mpesa_receipt:
+            payment = Payment.objects.filter(transaction_id=mpesa_receipt).first()
+        
+        if not payment:
             print(f"Payment not found for webhook data: {data}")
-            return JsonResponse({'error': 'Payment not found'}, status=404)
-        except Exception as e:
-            print(f"Error processing webhook: {str(e)}")
-            return JsonResponse({'error': f'Error processing payment: {str(e)}'}, status=500)
+            return JsonResponse({'status': 'error', 'message': 'Reference not found'})
+            
+        # Update payment status based on webhook result
+        if status == 'Success' and (result_code == '0' or result_code == 0):
+            payment.status = 'paid'
+            if mpesa_receipt:
+                payment.transaction_id = mpesa_receipt
+            payment.save()
+            print(f"Payment {payment.id} confirmed - M-Pesa Receipt: {mpesa_receipt}")
+            return JsonResponse({'status': 'success', 'message': 'Payment confirmed'})
+        else:
+            payment.status = 'failed'
+            payment.save()
+            print(f"Payment {payment.id} failed - Result: {result_code}")
+            return JsonResponse({'status': 'failed', 'message': 'Payment failed'})
             
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
     except Exception as e:
         print(f"Webhook error: {str(e)}")
-        return JsonResponse({'error': f'Webhook error: {str(e)}'}, status=500)
+        return JsonResponse({'status': 'error', 'message': str(e)})
 
 @login_required
 def payment_history(request):

@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Broker Dashboard - Umoja Farmer Connect</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'icons/favicon.ico' %}">
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -182,6 +183,9 @@
                             <div class="card-body">
                                 <h5 class="card-title mb-3">
                                     <i class="bi bi-map-fill text-success me-2"></i>Today's Routes
+                                    {% if today_routes %}
+                                        <span class="badge bg-success ms-2">{{ today_routes|length }}</span>
+                                    {% endif %}
                                 </h5>
                                 <div class="map-container" id="map" style="height: 400px;"></div>
                                 
@@ -246,8 +250,6 @@
                                                 <th>Route Name</th>
                                                 <th>Origin → Destination</th>
                                                 <th>Date & Time</th>
-                                                <th>Capacity</th>
-                                                <th>Price/kg</th>
                                                 <th>Status</th>
                                                 <th>Actions</th>
                                             </tr>
@@ -258,19 +260,6 @@
                                                     <td><strong>{{ route.name }}</strong></td>
                                                     <td>{{ route.origin }} → {{ route.destination }}</td>
                                                     <td>{{ route.date|date:"M d, Y" }} {{ route.time|time:"g:i A" }}</td>
-                                                    <td>
-                                                        <div class="mb-1">{{ route.available_capacity }}/{{ route.capacity }} kg</div>
-                                                        <div class="progress" style="height: 5px;">
-                                                            <div class="progress-bar bg-success" 
-                                                                 role="progressbar"
-                                                                 style="width: {{ route.capacity_percentage }}%;"
-                                                                 aria-valuenow="{{ route.capacity_percentage }}"
-                                                                 aria-valuemin="0" 
-                                                                 aria-valuemax="100">
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td>KES {{ route.price_per_kg }}</td>
                                                     <td>
                                                         <span class="badge bg-{% if route.status == 'active' %}success{% elif route.status == 'completed' %}secondary{% else %}danger{% endif %}">
                                                             {{ route.get_status_display }}
@@ -458,16 +447,6 @@
                                 <input type="time" class="form-control" name="time" required>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Capacity (kg)</label>
-                                <input type="number" class="form-control" name="capacity" placeholder="500" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Price (KES/kg)</label>
-                                <input type="number" step="0.01" class="form-control" name="price_per_kg" placeholder="40.00" required>
-                            </div>
-                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -485,16 +464,7 @@
     <!-- Custom JS -->
     <script src="{% static 'js/main.js' %}"></script>
     
-    <script id="routes-data" type="application/json">
-    [
-    {% for route in today_routes %}
-        {
-            "origin": "{{ route.origin|default:'-1.286389,36.817223'|escapejs }}",
-            "name": "{{ route.name|escapejs }}"
-        }{% if not forloop.last %},{% endif %}
-    {% endfor %}
-    ]
-    </script>
+    {{ routes_data_json|json_script:"routes-data" }}
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -515,17 +485,125 @@
                 }, 5000);
             });
 
-            // Parse routes from the JSON script tag and add markers
-            const routesData = JSON.parse(document.getElementById('routes-data').textContent || '[]');
-            routesData.forEach(function(r) {
-                if (!r.origin) return;
-                const parts = r.origin.split(',').map(function(s){ return parseFloat(s.trim()); });
-                if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-                    L.marker(parts).addTo(map)
-                        .bindPopup('<b>' + (r.name || '') + '</b><br>' + r.origin);
+            // Parse routes from the JSON script tag and display on map
+            let routesData = [];
+            try {
+                const routesDataElement = document.getElementById('routes-data');
+                if (routesDataElement) {
+                    const jsonText = routesDataElement.textContent || '[]';
+                    console.log('Raw JSON text:', jsonText.substring(0, 500)); // Log first 500 chars
+                    routesData = JSON.parse(jsonText);
+                    console.log('Parsed routes data:', routesData);
+                } else {
+                    console.warn('routes-data element not found');
+                }
+            } catch (e) {
+                console.error('Error parsing routes data:', e);
+                console.error('JSON text that failed:', document.getElementById('routes-data')?.textContent);
+            }
+            
+            const bounds = [];
+            let routesDisplayed = 0;
+            
+            console.log('Total routes to display:', routesData.length);
+            
+            routesData.forEach(function(route, index) {
+                console.log('Processing route', index + 1, ':', route.name, 'Stops:', route.stops);
+                try {
+                    let coords = [];
+                    
+                    // Check if stops exist and are valid
+                    if (route.stops && Array.isArray(route.stops) && route.stops.length > 0) {
+                        // Convert stops to coordinate array
+                        coords = route.stops.map(function(stop) {
+                            if (stop && typeof stop === 'object' && 'lat' in stop && 'lng' in stop) {
+                                return [parseFloat(stop.lat), parseFloat(stop.lng)];
+                            }
+                            return null;
+                        }).filter(function(coord) {
+                            return coord !== null && !isNaN(coord[0]) && !isNaN(coord[1]);
+                        });
+                    }
+                    
+                    // If no valid coordinates from stops, try parsing origin/destination
+                    if (coords.length === 0) {
+                        const originCoords = parseCoordinates(route.origin);
+                        const destCoords = parseCoordinates(route.destination);
+                        
+                        if (originCoords && destCoords) {
+                            coords = [originCoords, destCoords];
+                        }
+                    }
+                    
+                    // Display route if we have coordinates
+                    if (coords.length > 0) {
+                        console.log('Displaying route:', route.name, 'with', coords.length, 'coordinates');
+                        
+                        // Draw route polyline
+                        const polyline = L.polyline(coords, {
+                            color: '#28a745',
+                            weight: 4,
+                            opacity: 0.8
+                        }).addTo(map);
+                        
+                        // Add origin marker
+                        const originMarker = L.marker(coords[0]).addTo(map);
+                        originMarker.bindPopup('<b>' + route.name + '</b><br>Origin: ' + route.origin + '<br>Date: ' + route.date);
+                        
+                        // Add destination marker if different from origin
+                        if (coords.length > 1) {
+                            const destMarker = L.marker(coords[coords.length - 1]).addTo(map);
+                            destMarker.bindPopup('<b>' + route.name + '</b><br>Destination: ' + route.destination);
+                        }
+                        
+                        // Add to bounds
+                        coords.forEach(function(coord) {
+                            bounds.push(coord);
+                        });
+                        
+                        routesDisplayed++;
+                        console.log('Route displayed successfully:', route.name);
+                    } else {
+                        console.warn('No coordinates found for route:', route.name, 'Stops:', route.stops);
+                    }
+                } catch (e) {
+                    console.error('Error displaying route:', route.name, e);
                 }
             });
+            
+            // Fit map to show all routes
+            if (bounds.length > 0) {
+                map.fitBounds(bounds, { padding: [50, 50] });
+            } else {
+                // Debug information
+                console.log('Routes data:', routesData);
+                console.log('Routes displayed:', routesDisplayed);
+                console.log('Bounds:', bounds);
+                
+                if (routesData.length === 0) {
+                    // Show message if no routes for today
+                    L.marker(defaultCenter).addTo(map)
+                        .bindPopup('<b>No routes scheduled for today</b><br>Total routes in data: 0').openPopup();
+                } else if (routesDisplayed === 0) {
+                    // Routes exist but no coordinates available - show default center
+                    L.marker(defaultCenter).addTo(map)
+                        .bindPopup('<b>Routes found but coordinates not available</b><br>Please ensure routes have origin and destination set.<br>Routes found: ' + routesData.length + '<br>Routes displayed: ' + routesDisplayed).openPopup();
+                }
+            }
         });
+        
+        // Helper function to parse coordinates from string
+        function parseCoordinates(str) {
+            if (!str) return null;
+            // Try to parse "lat,lng" format
+            if (str.includes(',')) {
+                const parts = str.split(',').map(function(s) { return parseFloat(s.trim()); });
+                if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+                    return [parts[0], parts[1]];
+                }
+            }
+            return null;
+        }
 
         // Export route function
         function exportRoute() {

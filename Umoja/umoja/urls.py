@@ -39,6 +39,7 @@ urlpatterns = [
     path('payments/<int:payment_id>/', views.payment_detail, name='payment_detail'),
     path('payments/<int:payment_id>/confirm/', views.confirm_payment, name='confirm_payment'),
     path('payments/bid/<int:bid_id>/create/', views.create_payment, name='create_payment'),
+    path('payments/initiate/<str:payment_type>/<int:reference_id>/', views.initiate_payhero_payment, name='initiate_payhero_payment'),
     path('payments/payhero/redirect/', views.payhero_payment_redirect, name='payhero_payment_redirect'),
     path('webhook/payhero/', views.payhero_webhook, name='payhero_webhook'),
     

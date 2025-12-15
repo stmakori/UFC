@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bid Details - Umoja Farmer Connect</title>
+    <link rel="icon" type="image/x-icon" href="{% static 'icons/favicon.ico' %}">
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -294,37 +295,15 @@
                 </div>
                 <div class="modal-body">
                     <p>You are about to make a payment of <strong>KES <span id="paymentAmount">0.00</span></strong> for your accepted bid.</p>
-                    <p>Please select your preferred payment method:</p>
-                    
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="paymentMethod" id="mpesa" value="mpesa" checked>
-                            <label class="form-check-label" for="mpesa">
-                                <i class="bi bi-phone"></i> M-Pesa
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div id="mpesaPayment" class="payment-method">
-                        <form id="mpesaPaymentForm">
-                            <div class="mb-3">
-                                <label for="phoneNumber" class="form-label">M-Pesa Phone Number <span class="text-danger">*</span></label>
-                                <input type="tel" class="form-control" id="phoneNumber" name="phone_number" 
-                                       placeholder="254712345678" 
-                                       value="{% if user.profile.mpesa_number %}{{ user.profile.mpesa_number }}{% elif user.profile.phone %}{{ user.profile.phone }}{% endif %}"
-                                       required>
-                                <div class="form-text">Enter the phone number registered with M-Pesa</div>
-                            </div>
-                            <div class="alert alert-info">
-                                <small>You will receive an M-Pesa payment prompt on this number to complete the transaction.</small>
-                            </div>
-                        </form>
+                    <p>You will be redirected to enter your phone number and complete the payment.</p>
+                    <div class="alert alert-info">
+                        <small><i class="bi bi-info-circle me-1"></i>You will receive an M-Pesa payment prompt (STK Push) to complete the transaction.</small>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-success" id="confirmPayment">
-                        <i class="bi bi-check-circle me-1"></i> Confirm Payment
+                        <i class="bi bi-check-circle me-1"></i> Continue to Payment
                     </button>
                 </div>
             </div>
@@ -347,12 +326,7 @@
                     
                     const confirmBtn = document.getElementById('confirmPayment');
                     confirmBtn.onclick = function() {
-                        const phoneNumber = document.getElementById('phoneNumber').value;
-                        if (!phoneNumber) {
-                            alert('Please enter your M-Pesa phone number');
-                            return;
-                        }
-                        window.location.href = "{% url 'create_payment' bid.id %}?phone_number=" + encodeURIComponent(phoneNumber);
+                        window.location.href = "{% url 'create_payment' bid.id %}";
                     };
                 });
             }

@@ -209,7 +209,7 @@
                                    min="0.01" max="{{ listing.quantity_available }}" 
                                    step="0.01" required>
                             <div class="form-text">
-                                Maximum available: {{ listing.quantity_available }} {{ listing.get_unit_display }}
+                                Maximum available: {{ listing.quantity_available }} {{ listing.get_unit_display }}. You must bid less than the full amount.
                             </div>
                         </div>
                         
@@ -315,9 +315,10 @@
                     const price = parseFloat(document.getElementById('price_per_unit').value);
                     const maxQuantity = parseFloat(document.getElementById('quantity_requested').max);
                     
-                    if (isNaN(quantity) || quantity <= 0 || quantity > maxQuantity) {
+                    // Quantity must be strictly less than available (cannot bid exactly the full amount)
+                    if (isNaN(quantity) || quantity <= 0 || quantity >= maxQuantity) {
                         e.preventDefault();
-                        alert('Please enter a valid quantity (max: ' + maxQuantity + ')');
+                        alert('Please enter a valid quantity. Quantity must be less than ' + maxQuantity + ' (you cannot bid for the exact amount available).');
                         return false;
                     }
                     
