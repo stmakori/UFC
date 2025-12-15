@@ -37,7 +37,7 @@ def geocode_address(address):
                 except ValueError:
                     pass
         
-        # Use Nominatim for geocoding
+        # Use Nominatim for geocoding with shorter timeout to prevent hanging
         url = 'https://nominatim.openstreetmap.org/search'
         params = {
             'q': address,
@@ -49,7 +49,8 @@ def geocode_address(address):
             'User-Agent': 'Umoja Farmers Connect/1.0'
         }
         
-        response = requests.get(url, params=params, headers=headers, timeout=10)
+        # Reduced timeout to 5 seconds to prevent long waits
+        response = requests.get(url, params=params, headers=headers, timeout=5)
         if response.status_code == 200:
             data = response.json()
             if data:
@@ -57,6 +58,9 @@ def geocode_address(address):
                     'lat': float(data[0]['lat']),
                     'lng': float(data[0]['lon'])
                 }
+    except requests.exceptions.Timeout:
+        print(f"Geocoding timeout for '{address}'")
+        return None
     except Exception as e:
         print(f"Geocoding error for '{address}': {e}")
     
@@ -78,7 +82,8 @@ def get_route_directions(origin_coords, dest_coords):
             'steps': 'true'
         }
         
-        response = requests.get(f"{url}/{coords}", params=params, timeout=10)
+        # Reduced timeout to 5 seconds to prevent long waits
+        response = requests.get(f"{url}/{coords}", params=params, timeout=5)
         if response.status_code == 200:
             data = response.json()
             if data.get('code') == 'Ok' and data.get('routes'):
@@ -97,6 +102,9 @@ def get_route_directions(origin_coords, dest_coords):
                         'duration': route.get('duration', 0),  # in seconds
                         'steps': steps
                     }
+    except requests.exceptions.Timeout:
+        print(f"Routing timeout")
+        return None
     except Exception as e:
         print(f"Routing error: {e}")
     
@@ -344,14 +352,21 @@ def create_route(request):
             origin = request.POST.get('origin')
             destination = request.POST.get('destination')
             
-            # Calculate route coordinates
-            route_coords = calculate_route_coordinates(origin, destination)
-            
-            # Store coordinates in stops field as list of {lat, lng} objects
+            # Create route first with empty stops (will be calculated later if needed)
+            # This prevents blocking on slow API calls
             stops = []
-            if route_coords:
-                for coord in route_coords:
-                    stops.append({'lat': coord[0], 'lng': coord[1]})
+            
+            # Try to calculate route coordinates, but don't block if it fails or is slow
+            try:
+                route_coords = calculate_route_coordinates(origin, destination)
+                if route_coords:
+                    for coord in route_coords:
+                        stops.append({'lat': coord[0], 'lng': coord[1]})
+            except Exception as coord_error:
+                # If coordinate calculation fails, continue without it
+                # Coordinates can be calculated later when viewing the route
+                print(f"Route coordinate calculation failed: {coord_error}")
+                pass
             
             route = Route.objects.create(
                 broker=request.user,
@@ -368,7 +383,7 @@ def create_route(request):
                 status='active'
             )
             
-            messages.success(request, 'Route created successfully with directions calculated!')
+            messages.success(request, 'Route created successfully!')
             return redirect('broker_routes')
         except Exception as e:
             messages.error(request, f'Error creating route: {str(e)}')
@@ -421,20 +436,58 @@ def edit_route(request, route_id):
 def delete_route(request, route_id):
     """Delete route"""
     if request.method == 'POST':
-        route = get_object_or_404(Route, id=route_id, broker=request.user)
-        
-        # Check if there are bookings
-        if route.bookings.exists():
-            messages.error(request, 'Cannot delete route with existing bookings')
+        try:
+            route = get_object_or_404(Route, id=route_id, broker=request.user)
+            
+            # Check if there are bids associated with this route
+            if route.bids.exists():
+                error_msg = 'Cannot delete route with existing bids. Please remove or update the bids first.'
+                
+                # Check if this is an AJAX request
+                is_ajax = (
+                    request.headers.get('X-Requested-With') == 'XMLHttpRequest' or
+                    request.content_type == 'application/json' or
+                    request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+                )
+                
+                if is_ajax:
+                    return JsonResponse({'success': False, 'error': error_msg}, status=400)
+                
+                messages.error(request, error_msg)
+                return redirect('broker_routes')
+            
+            route.delete()
+            
+            # Check if this is an AJAX request
+            is_ajax = (
+                request.headers.get('X-Requested-With') == 'XMLHttpRequest' or
+                request.content_type == 'application/json' or
+                request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+            )
+            
+            if is_ajax:
+                return JsonResponse({'success': True, 'message': 'Route deleted successfully'})
+            
+            messages.success(request, 'Route deleted successfully')
             return redirect('broker_routes')
-        
-        route.delete()
-        
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({'success': True})
-        
-        messages.success(request, 'Route deleted successfully')
+            
+        except Exception as e:
+            # Check if this is an AJAX request
+            is_ajax = (
+                request.headers.get('X-Requested-With') == 'XMLHttpRequest' or
+                request.content_type == 'application/json' or
+                request.META.get('HTTP_X_REQUESTED_WITH') == 'XMLHttpRequest'
+            )
+            
+            error_msg = f'Error deleting route: {str(e)}'
+            
+            if is_ajax:
+                return JsonResponse({'success': False, 'error': error_msg}, status=500)
+            
+            messages.error(request, error_msg)
+            return redirect('broker_routes')
     
+    # If not POST, redirect
     return redirect('broker_routes')
 
 @login_required
